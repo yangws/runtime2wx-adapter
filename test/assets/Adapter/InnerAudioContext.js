@@ -136,6 +136,7 @@ class InnerAudioContext {
         if (this.audioId !== undefined) {
             audioEngine.stop(this.audioId);
             this.audioId = undefined;
+            this.isPause = false;
         } else {
             console.warn("InnerAudioContext stop: currently is no music");
         }

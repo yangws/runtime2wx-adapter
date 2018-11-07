@@ -10,7 +10,6 @@ module.exports = cc.Class({
 
     properties: {
         sv_tests: cc.ScrollView,
-        node_item_template: cc.Node,
         node_volume_template: cc.Node,
         audioClip: {
             type: cc.AudioClip,
@@ -27,7 +26,6 @@ module.exports = cc.Class({
 
     onLoad() {
         this._super();
-        this.node_item_template.active = false;
         this.node_volume_template.active = false;
 
         this._testAudio();
@@ -155,8 +153,8 @@ module.exports = cc.Class({
 
         if (this.onPlayCallback === undefined) {
             this.onPlayCallback = function () {
-                console.log("监听播放!!!");
-            };
+                this.audioItem.setMonitorEvent("监听播放成功");
+            }.bind(this);
         }
 
         if (this.isPlayCb) {
@@ -176,8 +174,8 @@ module.exports = cc.Class({
 
         if (this.onStopCallback === undefined) {
             this.onStopCallback = function () {
-                console.log("监听停止!!!");
-            };
+                this.audioItem.setMonitorEvent("监听停止成功");
+            }.bind(this);
         }
 
         if (this.isStopCb) {
@@ -197,8 +195,8 @@ module.exports = cc.Class({
 
         if (this.onPauseCallback === undefined) {
             this.onPauseCallback = function () {
-                console.log("监听暂停!!!");
-            };
+                this.audioItem.setMonitorEvent("监听暂停成功");
+            }.bind(this);
         }
 
         if (this.isPauseCb) {
@@ -306,6 +304,19 @@ module.exports = cc.Class({
             }
             uiUtil.setChildLabel(item, "lb_message", event, color);
         };
+
+
+        uiUtil.setChildLabel(item, "lb_monitor_title", "监听:", res.color.white);
+        //提示信息
+        uiUtil.setChildLabel(item, "lb_monotor_message", "监听状态", res.color.orange);
+        item.setMonitorEvent = function (event) {
+            var color = res.color.green;
+            if (arguments.length == 2) {
+                color = arguments[1];
+            }
+            uiUtil.setChildLabel(item, "lb_monotor_message", event, color);
+        };
+
 
         item.parent = this.sv_tests.content;
         item.active = true;
