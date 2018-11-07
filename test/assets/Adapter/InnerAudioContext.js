@@ -2,16 +2,12 @@ var audioEngine;
 
 class InnerAudioContext {
     src = null;
-
-    //startTime;
-    //obeyMuteSwitch = true;
-    //buffered;
-
     cbFunctionArrayMap = {}
     inLoop = false;
     inVolume = 1.0;
     inAutoplay = false;
     isPause = false;
+    audioId = undefined;
 
     constructor() {
         audioEngine = loadRuntime().AudioEngine;
@@ -92,8 +88,11 @@ class InnerAudioContext {
         }
 
         if (!this.isPause) {
-            this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
-            console.log("zzy play audioId = " + this.audioId + ", this.inLoop = " + this.inLoop + ", this.inVolume = " + this.inVolume);
+            if (this.audioId === undefined) {
+                this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
+            } else {
+                return;
+            }
         } else {
             if (this.audioId !== undefined) {
                 audioEngine.resume(this.audioId);
@@ -116,8 +115,13 @@ class InnerAudioContext {
 
     pause() {
         if (this.audioId !== undefined) {
-            audioEngine.pause(this.audioId);
-            this.isPause = true;
+            if (this.isPause === false) {
+                audioEngine.pause(this.audioId);
+                this.isPause = true;
+            } else {
+                console.warn("InnerAudioContext pause: currently music was pause");
+            }
+
         } else {
             console.warn("InnerAudioContext pause: currently is no music");
         }
@@ -131,7 +135,7 @@ class InnerAudioContext {
     stop() {
         if (this.audioId !== undefined) {
             audioEngine.stop(this.audioId);
-            console.log("zzy stop audioId = " + this.audioId);
+            this.audioId = undefined;
         } else {
             console.warn("InnerAudioContext stop: currently is no music");
         }
