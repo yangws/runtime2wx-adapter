@@ -181,7 +181,7 @@ module.exports = cc.Class({
         }
 
         if (this.isStopCb) {
-            lbl.string = "取消停止播放";
+            lbl.string = "取消监听停止";
             InnerAudioContext.onStop(this.onStopCallback);
         } else {
             lbl.string = "监听停止";
@@ -202,7 +202,7 @@ module.exports = cc.Class({
         }
 
         if (this.isPauseCb) {
-            lbl.string = "取消暂停播放";
+            lbl.string = "取消监听暂停";
             InnerAudioContext.onPause(this.onPauseCallback);
         } else {
             lbl.string = "监听暂停";

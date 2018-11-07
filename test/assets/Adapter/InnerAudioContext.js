@@ -1,4 +1,4 @@
-var rt;
+var audioEngine;
 
 class InnerAudioContext {
     src = null;
@@ -14,14 +14,14 @@ class InnerAudioContext {
     isPause = false;
 
     constructor() {
-        rt = loadRuntime();
+        audioEngine = loadRuntime().AudioEngine;
     }
 
     // read-write attribute
     get volume() {
         var ret = 1.0;
         if (this.audioId !== undefined) {
-            ret = rt.AudioEngine.getVolume(this.audioId);
+            ret = audioEngine.getVolume(this.audioId);
         }
         return ret;
     }
@@ -29,14 +29,14 @@ class InnerAudioContext {
     set volume(value) {
         this.inVolume = value;
         if (this.audioId !== undefined) {
-            rt.AudioEngine.setVolume(this.audioId, value);
+            audioEngine.setVolume(this.audioId, value);
         }
     }
 
     get loop() {
         var ret = false;
         if (this.audioId !== undefined) {
-            ret = rt.AudioEngine.isLoop(this.audioId);
+            ret = audioEngine.isLoop(this.audioId);
         }
         return ret;
     }
@@ -44,7 +44,7 @@ class InnerAudioContext {
     set loop(value) {
         this.inLoop = value;
         if (this.audioId !== undefined) {
-            rt.AudioEngine.setLoop(this.audioId, value);
+            audioEngine.setLoop(this.audioId, value);
         }
     }
 
@@ -63,7 +63,7 @@ class InnerAudioContext {
     get duration() {
         var ret = 0;
         if (this.audioId !== undefined) {
-            ret = rt.AudioEngine.getDuration(this.audioId)
+            ret = audioEngine.getDuration(this.audioId)
         }
         return ret;
     }
@@ -71,7 +71,7 @@ class InnerAudioContext {
     get currentTime() {
         var ret = 0;
         if (this.audioId !== undefined) {
-            ret = rt.AudioEngine.getCurrentTime(this.audioId)
+            ret = audioEngine.getCurrentTime(this.audioId)
         }
         return ret;
     }
@@ -79,7 +79,7 @@ class InnerAudioContext {
     get paused() {
         var ret = 0;
         if (this.audioId !== undefined) {
-            ret = rt.AudioEngine.getState(this.audioId)
+            ret = audioEngine.getState(this.audioId)
         }
         return ret;
     }
@@ -92,11 +92,11 @@ class InnerAudioContext {
         }
 
         if (!this.isPause) {
-            this.audioId = rt.AudioEngine.play(this.src, this.inLoop, this.inVolume);
+            this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
             console.log("zzy play audioId = " + this.audioId + ", this.inLoop = " + this.inLoop + ", this.inVolume = " + this.inVolume);
         } else {
             if (this.audioId !== undefined) {
-                rt.AudioEngine.resume(this.audioId);
+                audioEngine.resume(this.audioId);
                 this.isPause = false;
             } else {
                 console.warn("InnerAudioContext resume: currently is no music");
@@ -116,7 +116,7 @@ class InnerAudioContext {
 
     pause() {
         if (this.audioId !== undefined) {
-            rt.AudioEngine.pause(this.audioId);
+            audioEngine.pause(this.audioId);
             this.isPause = true;
         } else {
             console.warn("InnerAudioContext pause: currently is no music");
@@ -130,7 +130,7 @@ class InnerAudioContext {
 
     stop() {
         if (this.audioId !== undefined) {
-            rt.AudioEngine.stop(this.audioId);
+            audioEngine.stop(this.audioId);
             console.log("zzy stop audioId = " + this.audioId);
         } else {
             console.warn("InnerAudioContext stop: currently is no music");
@@ -144,19 +144,19 @@ class InnerAudioContext {
 
     seek(position) {
         if (this.audioId !== undefined) {
-            rt.AudioEngine.setCurrentTime(this.audioId, position);
+            audioEngine.setCurrentTime(this.audioId, position);
         } else {
             console.warn("InnerAudioContext seek: currently is no music");
         }
     }
 
     destroy() {
-        rt.AudioEngine.end();
+        audioEngine.end();
     }
 
     onEnded(callback) {
         if (this.audioId !== undefined) {
-            rt.AudioEngine.setFinishCallback(this.audioId, callback);
+            audioEngine.setFinishCallback(this.audioId, callback);
         } else {
             console.warn("InnerAudioContext onEnded: currently is no music");
         }
@@ -289,10 +289,4 @@ class InnerAudioContext {
 
 }
 
-const wx = {
-    createInnerAudioContext() {
-        return new InnerAudioContext()
-    }
-}
-
-module.exports = wx.createInnerAudioContext();
+module.exports = new InnerAudioContext();
