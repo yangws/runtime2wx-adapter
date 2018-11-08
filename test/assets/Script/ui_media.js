@@ -48,6 +48,7 @@ module.exports = cc.Class({
         }.bind(this));
         this.volume = 0.5;
         this.audioItem = item;
+        this.isLoop = false;
     },
 
     onSliderValueChange(event, customEventData) {
@@ -62,8 +63,6 @@ module.exports = cc.Class({
         var node = event.target;
         var button = node.getComponent(cc.Button);
         var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
-        this.isLoop = !this.isLoop;
-        lbl.string = this.isLoop ? "循环播放" : "单曲播放";
 
         //rt.AudioEngine.setLoop(this.audioId, this.isLoop);
         InnerAudioContext.loop = this.isLoop;
@@ -74,6 +73,9 @@ module.exports = cc.Class({
         } else {
             this.audioItem.setEvent("当前音乐单次播放");
         }
+
+        this.isLoop = !this.isLoop;
+        lbl.string = this.isLoop ? "循环播放" : "单曲播放";
     },
 
     onClickButtonGetVolume() {
@@ -208,6 +210,35 @@ module.exports = cc.Class({
         }
     },
 
+    onClickButtonEndedCb(event) {
+        var node = event.target;
+        var button = node.getComponent(cc.Button);
+        var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
+        this.isEndedCb = !this.isEndedCb;
+
+        if (this.onEndedCallback === undefined) {
+            this.onEndedCallback = function () {
+                this.audioItem.setMonitorEvent("监听音频播放结束成功");
+            }.bind(this);
+        }
+
+        if (this.isEndedCb) {
+            lbl.string = "取消监听结束";
+            InnerAudioContext.onEnded(this.onEndedCallback);
+        } else {
+            lbl.string = "监听音频结束";
+            InnerAudioContext.offEnded(this.onEndedCallback);
+        }
+    },
+
+    onClickButtonIsPause() {
+        if (InnerAudioContext.paused) {
+            this.audioItem.setEvent("当前是暂停或停止状态");
+        } else {
+            this.audioItem.setEvent("当前不是暂停或停止状态");
+        }
+    },
+
     onClickButtonLeft(event, customEventData) {
         var node = event.target;
         var button = node.getComponent(cc.Button);
@@ -218,55 +249,6 @@ module.exports = cc.Class({
         var node = event.target;
         var button = node.getComponent(cc.Button);
         button.onClick();
-    },
-
-    onClickButtonUncacheAll() {
-        //rt.AudioEngine.uncacheAll();
-        this.audioItem.setEvent("卸载所有预加载");
-    },
-
-    onClickButtonGetState() {
-        if (this.audioId !== undefined) {
-            //var state = rt.AudioEngine.getState(this.audioId);
-            var state = 0;
-            if (state === -1) {
-                this.audioItem.setEvent("播放状态:" + "未在播放或音乐结束");
-            } else if (state === 0) {
-                this.audioItem.setEvent("播放状态:" + "初始化中");
-            } else if (state === 1) {
-                this.audioItem.setEvent("播放状态:" + "正在播放");
-            } else if (state === 2) {
-                this.audioItem.setEvent("播放状态:" + "暂停");
-            }
-        } else {
-            this.audioItem.setEvent("当前无音乐");
-        }
-    },
-
-    onClickButtonFinishCb(event) {
-        if (this.audioId !== undefined) {
-            var node = event.target;
-            var button = node.getComponent(cc.Button);
-            var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
-            //var state = rt.AudioEngine.getState(this.audioId);
-            var state = 1;
-            if (lbl.string === "正在监听" || state === -1) {
-                if (state === -1) {
-                    this.audioItem.setEvent("当前无音乐");
-                }
-                return;
-            }
-            lbl.string = "正在监听";
-            // rt.AudioEngine.setFinishCallback(this.audioId, function () {
-            //     if (this.audioItem !== undefined) {
-            //         this.audioItem.setEvent("音乐播放结束");
-            //     }
-            //     lbl.string = "监听音乐状态";
-            // }.bind(this));
-
-        } else {
-            this.audioItem.setEvent("当前无音乐");
-        }
     },
 
     _createVolumeItem(title, message, bindFun) {

@@ -2,12 +2,15 @@ var audioEngine;
 
 class InnerAudioContext {
     src = null;
-    cbFunctionArrayMap = {}
+    cbFunctionArrayMap = {};
+    endCb = null;
     inLoop = false;
     inVolume = 1.0;
     inAutoplay = false;
-    isPause = false;
+    isStop = false;
     audioId = undefined;
+    PLAYING = 1;
+    PAUSE = 2;
 
     constructor() {
         audioEngine = loadRuntime().AudioEngine;
@@ -59,7 +62,7 @@ class InnerAudioContext {
     get duration() {
         var ret = 0;
         if (this.audioId !== undefined) {
-            ret = audioEngine.getDuration(this.audioId)
+            ret = audioEngine.getDuration(this.audioId);
         }
         return ret;
     }
@@ -67,15 +70,20 @@ class InnerAudioContext {
     get currentTime() {
         var ret = 0;
         if (this.audioId !== undefined) {
-            ret = audioEngine.getCurrentTime(this.audioId)
+            ret = audioEngine.getCurrentTime(this.audioId);
         }
         return ret;
     }
 
     get paused() {
-        var ret = 0;
+        var ret = false;
         if (this.audioId !== undefined) {
-            ret = audioEngine.getState(this.audioId)
+            if (audioEngine.getState(this.audioId) === this.PAUSE) {
+                ret = true;
+            }
+        }
+        if (this.isStop) {
+            ret = true;
         }
         return ret;
     }
@@ -87,18 +95,21 @@ class InnerAudioContext {
             return;
         }
 
-        if (!this.isPause) {
-            if (this.audioId === undefined) {
-                this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
-            } else {
-                return;
-            }
-        } else {
+        if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
             if (this.audioId !== undefined) {
                 audioEngine.resume(this.audioId);
-                this.isPause = false;
             } else {
                 console.warn("InnerAudioContext resume: currently is no music");
+            }
+        } else {
+            if (this.audioId === undefined) {
+                this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
+                this.isStop = false;
+            } else if (this.audioId !== undefined && this.loop === false && audioEngine.getState(this.audioId) !== this.PLAYING) {
+                this.audioId = undefined;
+                this.audioId = audioEngine.play(this.src, this.loop, this.inVolume);
+            } else {
+                return;
             }
         }
 
@@ -107,17 +118,20 @@ class InnerAudioContext {
             this.onFunctionCallback(cbArray);
         }
 
-        var cbArray2 = this.getFunctionCallbackArray("onError");
-        if (cbArray2 !== undefined) {
-            this.onFunctionCallback(cbArray2);
+        if (this.audioId !== undefined) {
+            if (this.endCb !== null) {
+                audioEngine.setFinishCallback(this.audioId, this.endCb);
+            }
+        } else {
+            console.warn("InnerAudioContext onEnded: currently is no music");
         }
+
     }
 
     pause() {
         if (this.audioId !== undefined) {
-            if (this.isPause === false) {
+            if (audioEngine.getState(this.audioId) !== this.PAUSE) {
                 audioEngine.pause(this.audioId);
-                this.isPause = true;
             } else {
                 console.warn("InnerAudioContext pause: currently music was pause");
             }
@@ -136,7 +150,7 @@ class InnerAudioContext {
         if (this.audioId !== undefined) {
             audioEngine.stop(this.audioId);
             this.audioId = undefined;
-            this.isPause = false;
+            this.isStop = true;
         } else {
             console.warn("InnerAudioContext stop: currently is no music");
         }
@@ -160,14 +174,27 @@ class InnerAudioContext {
     }
 
     onEnded(callback) {
-        if (this.audioId !== undefined) {
-            audioEngine.setFinishCallback(this.audioId, callback);
-        } else {
-            console.warn("InnerAudioContext onEnded: currently is no music");
+        if (this.endCb === null) {
+            this.endCb = callback;
+            if (this.audioId !== undefined) {
+                audioEngine.setFinishCallback(this.audioId, this.endCb);
+            } else {
+                console.warn("InnerAudioContext onEnded: currently is no music");
+            }
+        }
+    }
+
+    offEnded(callback) {
+        if (this.endCb !== null) {
+            this.endCb = null;
         }
     }
 
     onPlay(callback) {
+        if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PLAYING) {
+            callback();
+            return;
+        }
         this.pushFunctionCallback("onPlay", callback);
     }
 
@@ -176,6 +203,10 @@ class InnerAudioContext {
     }
 
     onPause(callback) {
+        if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
+            callback();
+            return;
+        }
         this.pushFunctionCallback("onPause", callback);
     }
 
@@ -184,19 +215,15 @@ class InnerAudioContext {
     }
 
     onStop(callback) {
+        if (this.isStop) {
+            callback();
+            return;
+        }
         this.pushFunctionCallback("onStop", callback);
     }
 
     offStop(callback) {
         this.removeFunctionCallback("onStop", callback);
-    }
-
-    onError(callback) {
-        this.pushFunctionCallback("onError", callback);
-    }
-
-    offError(callback) {
-        this.removeFunctionCallback("onError", callback);
     }
 
     // callback function tool
