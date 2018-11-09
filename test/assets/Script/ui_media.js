@@ -1,9 +1,8 @@
-//var rt = loadRuntime();
-var InnerAudioContext = require("InnerAudioContext");
-
 var res = require("resource");
 var uiUtil = require("ui_util");
 var ui = require("ui");
+var innerAudioContext = loadRuntime().createInnerAudioContext();
+// var innerAudioContext2 = loadRuntime().createInnerAudioContext();
 
 module.exports = cc.Class({
     extends: require("ui_base"),
@@ -15,12 +14,17 @@ module.exports = cc.Class({
             type: cc.AudioClip,
             default: null,
         },
+
+        audioClip2: {
+            type: cc.AudioClip,
+            default: null,
+        },
     },
 
     onClickButtonCancel() {
         //rt.AudioEngine.stopAll();
-        InnerAudioContext.stop();
-        InnerAudioContext.destroy();
+        innerAudioContext.stop();
+        innerAudioContext.destroy();
         ui.close();
     },
 
@@ -44,7 +48,7 @@ module.exports = cc.Class({
             // if (this.audioId !== undefined) {
             //     rt.AudioEngine.setVolume(this.audioId, this.volume);
             // }
-            InnerAudioContext.volume = this.volume;
+            innerAudioContext.volume = this.volume;
         }.bind(this));
         this.volume = 0.5;
         this.audioItem = item;
@@ -65,9 +69,9 @@ module.exports = cc.Class({
         var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
 
         //rt.AudioEngine.setLoop(this.audioId, this.isLoop);
-        InnerAudioContext.loop = this.isLoop;
+        innerAudioContext.loop = this.isLoop;
         //var isLoop = rt.AudioEngine.isLoop(this.audioId);
-        var isLoop = InnerAudioContext.loop;
+        var isLoop = innerAudioContext.loop;
         if (isLoop) {
             this.audioItem.setEvent("当前音乐循环播放");
         } else {
@@ -84,7 +88,7 @@ module.exports = cc.Class({
         // } else {
         //     this.audioItem.setEvent("当前无音乐");
         // }
-        this.audioItem.setEvent("当前音乐音量:" + InnerAudioContext.volume);
+        this.audioItem.setEvent("当前音乐音量:" + innerAudioContext.volume);
     },
 
     onClickButtonGetCurrentTime() {
@@ -93,7 +97,7 @@ module.exports = cc.Class({
         // } else {
         //     this.audioItem.setEvent("当前无音乐");
         // }
-        this.audioItem.setEvent("当前音乐时间:" + InnerAudioContext.currentTime);
+        this.audioItem.setEvent("当前音乐时间:" + innerAudioContext.currentTime);
     },
 
     onClickButtonGetTotalTime() {
@@ -102,8 +106,8 @@ module.exports = cc.Class({
         // } else {
         //     this.audioItem.setEvent("当前无音乐");
         // }
-        if (InnerAudioContext.duration !== 0) {
-            this.audioItem.setEvent("总时长:" + InnerAudioContext.duration);
+        if (innerAudioContext.duration !== 0) {
+            this.audioItem.setEvent("总时长:" + innerAudioContext.duration);
         } else {
             this.audioItem.setEvent("当前无音乐");
         }
@@ -111,10 +115,16 @@ module.exports = cc.Class({
 
     onClickButtonPlay() {
         //this.audioId = rt.AudioEngine.play(this.audioClip.nativeUrl, this.isLoop, this.volume);
-        InnerAudioContext.src = this.audioClip.nativeUrl;
-        InnerAudioContext.loop = true;
-        InnerAudioContext.volume = this.volume;
-        InnerAudioContext.play();
+        innerAudioContext.src = this.audioClip.nativeUrl;
+        innerAudioContext.loop = true;
+        innerAudioContext.volume = this.volume;
+        innerAudioContext.play();
+
+        // innerAudioContext2.src = this.audioClip2.nativeUrl;
+        // innerAudioContext2.loop = true;
+        // innerAudioContext2.volume = this.volume;
+        // innerAudioContext2.play();
+
         this.audioItem.setEvent("开始播放音乐");
     },
 
@@ -125,7 +135,7 @@ module.exports = cc.Class({
         // } else {
         //     this.audioItem.setEvent("当前无音乐");
         // }
-        InnerAudioContext.stop();
+        innerAudioContext.stop();
         this.audioItem.setEvent("停止播放当前音乐");
     },
 
@@ -136,13 +146,13 @@ module.exports = cc.Class({
         // } else {
         //     this.audioItem.setEvent("当前无音乐");
         // }
-        InnerAudioContext.pause();
+        innerAudioContext.pause();
         this.audioItem.setEvent("暂停播放当前音乐");
     },
 
     onClickButtonAutoplay() {
-        InnerAudioContext.src = this.audioClip.nativeUrl;
-        InnerAudioContext.autoplay = true;
+        innerAudioContext.src = this.audioClip.nativeUrl;
+        innerAudioContext.autoplay = true;
         this.audioItem.setEvent("自动播放音乐");
     },
 
@@ -161,10 +171,10 @@ module.exports = cc.Class({
 
         if (this.isPlayCb) {
             lbl.string = "取消监听播放";
-            InnerAudioContext.onPlay(this.onPlayCallback);
+            innerAudioContext.onPlay(this.onPlayCallback);
         } else {
             lbl.string = "监听播放";
-            InnerAudioContext.offPlay(this.onPlayCallback);
+            innerAudioContext.offPlay(this.onPlayCallback);
         }
     },
 
@@ -182,10 +192,10 @@ module.exports = cc.Class({
 
         if (this.isStopCb) {
             lbl.string = "取消监听停止";
-            InnerAudioContext.onStop(this.onStopCallback);
+            innerAudioContext.onStop(this.onStopCallback);
         } else {
             lbl.string = "监听停止";
-            InnerAudioContext.offStop(this.onStopCallback);
+            innerAudioContext.offStop(this.onStopCallback);
         }
     },
 
@@ -203,10 +213,10 @@ module.exports = cc.Class({
 
         if (this.isPauseCb) {
             lbl.string = "取消监听暂停";
-            InnerAudioContext.onPause(this.onPauseCallback);
+            innerAudioContext.onPause(this.onPauseCallback);
         } else {
             lbl.string = "监听暂停";
-            InnerAudioContext.offPause(this.onPauseCallback);
+            innerAudioContext.offPause(this.onPauseCallback);
         }
     },
 
@@ -224,15 +234,15 @@ module.exports = cc.Class({
 
         if (this.isEndedCb) {
             lbl.string = "取消监听结束";
-            InnerAudioContext.onEnded(this.onEndedCallback);
+            innerAudioContext.onEnded(this.onEndedCallback);
         } else {
             lbl.string = "监听音频结束";
-            InnerAudioContext.offEnded(this.onEndedCallback);
+            innerAudioContext.offEnded(this.onEndedCallback);
         }
     },
 
     onClickButtonIsPause() {
-        if (InnerAudioContext.paused) {
+        if (innerAudioContext.paused) {
             this.audioItem.setEvent("当前是暂停或停止状态");
         } else {
             this.audioItem.setEvent("当前不是暂停或停止状态");
@@ -273,9 +283,9 @@ module.exports = cc.Class({
             // } else {
             //     this.audioItem.setEvent("当前无音乐");
             // }
-            var total = InnerAudioContext.duration;
+            var total = innerAudioContext.duration;
             var current = total * timeSlider.progress;
-            InnerAudioContext.seek(current);
+            innerAudioContext.seek(current);
             this.audioItem.setEvent("设置音乐时间成功");
         }.bind(this);
 
