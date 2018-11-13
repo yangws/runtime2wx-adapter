@@ -7,7 +7,6 @@ let TestCaseArray = [
     "ui_media",
 ];
 
-let _VERSION = "1.0.0";
 
 module.exports = cc.Class({
     extends: cc.Component,
@@ -16,13 +15,11 @@ module.exports = cc.Class({
         node_root: cc.Node,
         sv_tests: cc.ScrollView,
         node_item_template: cc.Node,
-        label_version: cc.Label,
     },
 
     onLoad() {
         ui.init(this.node_root);
         this.node_item_template.active = false;
-        this.label_version.string = _VERSION;
 
         let content = this.sv_tests.content;
         TestCaseArray.forEach((test) => {
