@@ -52,7 +52,13 @@ module.exports = cc.Class({
             // if (this.audioId !== undefined) {
             //     rt.AudioEngine.setVolume(this.audioId, this.volume);
             // }
-            innerAudioContext.volume = this.volume;
+            if (innerAudioContext.audioId !== undefined) {
+                innerAudioContext.volume = this.volume;
+                this.audioItem.setEvent("设置音乐音量为:" + this.volume);
+            } else {
+                this.audioItem.setEvent("当前没有音乐播放");
+            }
+
         }.bind(this));
         this.volume = 0.5;
         this.audioItem = item;
@@ -121,7 +127,7 @@ module.exports = cc.Class({
         //this.audioId = rt.AudioEngine.play(this.audioClip.nativeUrl, this.isLoop, this.volume);
 
         //innerAudioContext.src = this.audioClip.nativeUrl;
-        innerAudioContext.src = "http://dl.stream.qqmusic.qq.com/M500003OUlho2HcRHC.mp3?vkey=F8BA48661BD5022884BAB6E0C7A9E115DDCCB52D42905628BBA12F87CC01BC90BA8BC81692E7E02F7D799A4EE9DDAE288833877E13690F7C&guid=9136027940&fromtag=1";
+        innerAudioContext.src = "http://ws.stream.qqmusic.qq.com/M500001VfvsJ21xFqb.mp3?guid=ffffffff82def4af4b12b3cd9337d5e7&uin=346897220&vkey=6292F51E1E384E061FF02C31F716658E5C81F5594D561F2E88B854E81CAAB7806D5E4F103E55D33C16F3FAC506D1AB172DE8600B37E43FAD&fromtag=46";
         innerAudioContext.loop = true;
         innerAudioContext.volume = this.volume;
         innerAudioContext.play();
@@ -313,6 +319,48 @@ module.exports = cc.Class({
         }
     },
 
+    onClickButtonSeekingCb(event) {
+        var node = event.target;
+        var button = node.getComponent(cc.Button);
+        var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
+        this.isSeekingCb = !this.isSeekingCb;
+
+        if (this.onSeekingCallback === undefined) {
+            this.onSeekingCallback = function () {
+                this.audioItem.setMonitorEvent("监听音频进行跳转成功");
+            }.bind(this);
+        }
+
+        if (this.isSeekingCb) {
+            lbl.string = "取消监听进行跳转";
+            innerAudioContext.onSeeking(this.onSeekingCallback);
+        } else {
+            lbl.string = "监听进行跳转";
+            innerAudioContext.offSeeking(this.onSeekingCallback);
+        }
+    },
+
+    onClickButtonSeekedCb(event) {
+        var node = event.target;
+        var button = node.getComponent(cc.Button);
+        var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
+        this.isSeekedCb = !this.isSeekedCb;
+
+        if (this.onSeekedCallback === undefined) {
+            this.onSeekedCallback = function () {
+                this.audioItem.setMonitorEvent("监听音频完成跳转成功");
+            }.bind(this);
+        }
+
+        if (this.isSeekedCb) {
+            lbl.string = "取消监听完成跳转";
+            innerAudioContext.onSeeked(this.onSeekedCallback);
+        } else {
+            lbl.string = "监听完成跳转";
+            innerAudioContext.offSeeked(this.onSeekedCallback);
+        }
+    },
+
     onClickButtonIsPause() {
         if (innerAudioContext.paused) {
             this.audioItem.setEvent("当前是暂停或停止状态");
@@ -355,10 +403,15 @@ module.exports = cc.Class({
             // } else {
             //     this.audioItem.setEvent("当前无音乐");
             // }
-            var total = innerAudioContext.duration;
-            var current = total * timeSlider.progress;
-            innerAudioContext.seek(current);
-            this.audioItem.setEvent("设置音乐时间成功");
+            if (innerAudioContext.audioId !== undefined) {
+                var total = innerAudioContext.duration;
+                var current = total * timeSlider.progress;
+                innerAudioContext.seek(current);
+                this.audioItem.setEvent("设置音乐时间为：" + current);
+            } else {
+                this.audioItem.setEvent("当前没有音乐播放");
+            }
+
         }.bind(this);
 
         item.setEvent = function (event) {

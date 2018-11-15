@@ -15,6 +15,8 @@ class InnerAudioContext {
         this.inAutoplay = false;
         this.isStop = false;
         this.isWaiting = false;
+        this.isSeeking = false;
+        this.isSeeked = false;
         this.audioId = undefined;
         this.PLAYING = 1;
         this.PAUSE = 2;
@@ -191,9 +193,9 @@ class InnerAudioContext {
                 this.audioId = audioEngine.play(this.filePath, this.inLoop, this.inVolume);
                 this.isStop = false;
 
-                var cbArray = this.getFunctionCallbackArray("onPlay");
-                if (cbArray !== undefined) {
-                    this.onFunctionCallback(cbArray);
+                var cbArray2 = this.getFunctionCallbackArray("onPlay");
+                if (cbArray2 !== undefined) {
+                    this.onFunctionCallback(cbArray2);
                 }
 
             } else if (this.audioId !== undefined && this.loop === false && audioEngine.getState(this.audioId) !== this.PLAYING) {
@@ -246,7 +248,21 @@ class InnerAudioContext {
 
     seek(position) {
         if (this.audioId !== undefined) {
+            this.isSeeking = true;
+            this.isSeeked = true;
+
+            var cbArray = this.getFunctionCallbackArray("onSeeking");
+            if (cbArray !== undefined) {
+                this.onFunctionCallback(cbArray);
+            }
+
             audioEngine.setCurrentTime(this.audioId, position);
+
+            var cbArray2 = this.getFunctionCallbackArray("onSeeked");
+            if (cbArray2 !== undefined) {
+                this.onFunctionCallback(cbArray2);
+            }
+
         } else {
             console.warn("InnerAudioContext seek: currently is no music");
         }
@@ -340,6 +356,32 @@ class InnerAudioContext {
 
     offWaiting(callback) {
         this.removeFunctionCallback("onWaiting", callback);
+    }
+
+    onSeeking(callback) {
+        if (this.audioId !== undefined && this.isSeeking) {
+            this.isSeeking = false;
+            callback();
+            return;
+        }
+        this.pushFunctionCallback("onSeeking", callback);
+    }
+
+    offSeeking(callback) {
+        this.removeFunctionCallback("onSeeking", callback);
+    }
+
+    onSeeked(callback) {
+        if (this.audioId !== undefined && this.isSeeked) {
+            this.isSeeked = false;
+            callback();
+            return;
+        }
+        this.pushFunctionCallback("onSeeked", callback);
+    }
+
+    offSeeked(callback) {
+        this.removeFunctionCallback("onSeeked", callback);
     }
 
     // callback function tool
