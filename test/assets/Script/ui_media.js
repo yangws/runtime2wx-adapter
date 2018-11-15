@@ -4,6 +4,10 @@ var ui = require("ui");
 var innerAudioContext = loadRuntime().createInnerAudioContext();
 // var innerAudioContext2 = loadRuntime().createInnerAudioContext();
 
+// var createInnerAudioContext = require("InnerAudioContext");
+// var innerAudioContext = new createInnerAudioContext();
+
+
 module.exports = cc.Class({
     extends: require("ui_base"),
 
@@ -115,7 +119,9 @@ module.exports = cc.Class({
 
     onClickButtonPlay() {
         //this.audioId = rt.AudioEngine.play(this.audioClip.nativeUrl, this.isLoop, this.volume);
-        innerAudioContext.src = this.audioClip.nativeUrl;
+
+        //innerAudioContext.src = this.audioClip.nativeUrl;
+        innerAudioContext.src = "http://dl.stream.qqmusic.qq.com/M500003OUlho2HcRHC.mp3?vkey=F8BA48661BD5022884BAB6E0C7A9E115DDCCB52D42905628BBA12F87CC01BC90BA8BC81692E7E02F7D799A4EE9DDAE288833877E13690F7C&guid=9136027940&fromtag=1";
         innerAudioContext.loop = true;
         innerAudioContext.volume = this.volume;
         innerAudioContext.play();
@@ -175,6 +181,72 @@ module.exports = cc.Class({
         } else {
             lbl.string = "监听播放";
             innerAudioContext.offPlay(this.onPlayCallback);
+        }
+    },
+
+    onClickButtonErrorCb(event) {
+        var node = event.target;
+        var button = node.getComponent(cc.Button);
+        var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
+
+        this.isErrorCb = !this.isErrorCb;
+
+        if (this.onErrorCallback === undefined) {
+            this.onErrorCallback = function (res) {
+                this.audioItem.setMonitorEvent("errMsg: " + res.errMsg + ", errCode: " + res.errCode);
+            }.bind(this);
+        }
+
+        if (this.isErrorCb) {
+            lbl.string = "取消监听播放错误";
+            innerAudioContext.onError(this.onErrorCallback);
+        } else {
+            lbl.string = "监听播放错误";
+            innerAudioContext.offError(this.onErrorCallback);
+        }
+    },
+
+    onClickButtonCanPlayCb(event) {
+        var node = event.target;
+        var button = node.getComponent(cc.Button);
+        var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
+
+        this.isCanPlayCb = !this.isCanPlayCb;
+
+        if (this.onCanPlayCallback === undefined) {
+            this.onCanPlayCallback = function () {
+                this.audioItem.setMonitorEvent("监听可以播放成功");
+            }.bind(this);
+        }
+
+        if (this.isCanPlayCb) {
+            lbl.string = "取消监听可以播放";
+            innerAudioContext.onCanplay(this.onCanPlayCallback);
+        } else {
+            lbl.string = "监听可以播放";
+            innerAudioContext.offCanplay(this.onCanPlayCallback);
+        }
+    },
+
+    onClickButtonWaitingCb(event) {
+        var node = event.target;
+        var button = node.getComponent(cc.Button);
+        var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
+
+        this.isWaitingCb = !this.isWaitingCb;
+
+        if (this.onWaitingCallback === undefined) {
+            this.onWaitingCallback = function () {
+                this.audioItem.setMonitorEvent("监听音频加载中");
+            }.bind(this);
+        }
+
+        if (this.isWaitingCb) {
+            lbl.string = "取消监听加载中";
+            innerAudioContext.onWaiting(this.onWaitingCallback);
+        } else {
+            lbl.string = "监听加载中";
+            innerAudioContext.offWaiting(this.onWaitingCallback);
         }
     },
 

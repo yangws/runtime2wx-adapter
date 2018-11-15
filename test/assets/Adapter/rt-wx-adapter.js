@@ -6,20 +6,23 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var audioEngine;
+var rt = loadRuntime();
 
 var InnerAudioContext = function () {
     function InnerAudioContext() {
         _classCallCheck(this, InnerAudioContext);
 
-        audioEngine = loadRuntime().AudioEngine;
+        audioEngine = rt.AudioEngine;
 
         this.src = null;
+        this.filePath = null;
         this.cbFunctionArrayMap = {};
         this.endCb = null;
         this.inLoop = false;
         this.inVolume = 1.0;
         this.inAutoplay = false;
         this.isStop = false;
+        this.isWaiting = false;
         this.audioId = undefined;
         this.PLAYING = 1;
         this.PAUSE = 2;
@@ -39,6 +42,81 @@ var InnerAudioContext = function () {
                 return;
             }
 
+            if (this.src.search("http://") !== -1) {
+                var format;
+                if (this.src.search(".mp3") !== -1) {
+                    format = ".mp3";
+                } else if (this.src.search(".ogg") !== -1) {
+                    format = ".ogg";
+                } else if (this.src.search(".wav") !== -1) {
+                    format = ".wav";
+                } else if (this.src.search(".mid") !== -1) {
+                    format = ".mid";
+                } else {
+                    format = undefined;
+                }
+
+                var fileName;
+                if (format !== undefined) {
+                    fileName = this.src.substring(this.src.indexOf(format) - 8, this.src.indexOf(format));
+                    this.filePath = rt.env.USER_DATA_PATH + "/" + fileName + format;
+                } else {
+                    fileName = "unKnowMusic";
+                    this.filePath = rt.env.USER_DATA_PATH + "/" + fileName;
+                }
+
+                var fileIsExist;
+                var fileExist = function () {
+                    this.playing();
+                }.bind(this);
+
+                var self = this;
+                var fileNotExist = function () {
+                    var task = rt.downloadFile({
+                        url: this.src,
+                        filePath: this.filePath,
+                        success: function success() {
+                            self.playing();
+                        },
+                        fail: function fail() {
+                            console.error("InnerAudioContext play: downloadFile fail");
+                            var cbArray = self.getFunctionCallbackArray("onError");
+                            if (cbArray !== undefined) {
+                                var res = { errMsg: "downloadFile fail", errCode: 10002 };
+                                self.onFunctionCallback(cbArray, res);
+                            }
+                            return;
+                        },
+                        complete: function complete() {
+                            self.isWaiting = false;
+                        }
+                    });
+                    task.onProgressUpdate(function (msg) {
+                        if (!self.isWaiting) {
+                            self.isWaiting = true;
+
+                            var cbArray = self.getFunctionCallbackArray("onWaiting");
+                            if (cbArray !== undefined) {
+                                self.onFunctionCallback(cbArray);
+                            }
+                        }
+                    });
+                }.bind(this);
+
+                var fileManager = rt.getFileSystemManager();
+                fileManager.access({
+                    path: this.filePath,
+                    success: fileExist,
+                    fail: fileNotExist
+                });
+            } else {
+                this.filePath = this.src;
+                this.playing();
+            }
+        }
+    }, {
+        key: "playing",
+        value: function playing() {
             if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
                 if (this.audioId !== undefined) {
                     audioEngine.resume(this.audioId);
@@ -47,27 +125,30 @@ var InnerAudioContext = function () {
                 }
             } else {
                 if (this.audioId === undefined) {
-                    this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
+                    var cbArray = this.getFunctionCallbackArray("onCanplay");
+                    if (cbArray !== undefined) {
+                        this.onFunctionCallback(cbArray);
+                    }
+
+                    this.audioId = audioEngine.play(this.filePath, this.inLoop, this.inVolume);
                     this.isStop = false;
+
+                    var cbArray = this.getFunctionCallbackArray("onPlay");
+                    if (cbArray !== undefined) {
+                        this.onFunctionCallback(cbArray);
+                    }
                 } else if (this.audioId !== undefined && this.loop === false && audioEngine.getState(this.audioId) !== this.PLAYING) {
                     this.audioId = undefined;
-                    this.audioId = audioEngine.play(this.src, this.loop, this.inVolume);
+                    this.audioId = audioEngine.play(this.filePath, this.loop, this.inVolume);
                 } else {
                     return;
                 }
-            }
-
-            var cbArray = this.getFunctionCallbackArray("onPlay");
-            if (cbArray !== undefined) {
-                this.onFunctionCallback(cbArray);
             }
 
             if (this.audioId !== undefined) {
                 if (this.endCb !== null) {
                     audioEngine.setFinishCallback(this.audioId, this.endCb);
                 }
-            } else {
-                console.warn("InnerAudioContext onEnded: currently is no music");
             }
         }
     }, {
@@ -117,6 +198,7 @@ var InnerAudioContext = function () {
         key: "destroy",
         value: function destroy() {
             audioEngine.end();
+            this.cbFunctionArrayMap = {};
         }
     }, {
         key: "onEnded",
@@ -179,6 +261,44 @@ var InnerAudioContext = function () {
         value: function offStop(callback) {
             this.removeFunctionCallback("onStop", callback);
         }
+    }, {
+        key: "onError",
+        value: function onError(callback) {
+            this.pushFunctionCallback("onError", callback);
+        }
+    }, {
+        key: "offError",
+        value: function offError(callback) {
+            this.removeFunctionCallback("onError", callback);
+        }
+    }, {
+        key: "onCanplay",
+        value: function onCanplay(callback) {
+            if (this.audioId !== undefined) {
+                callback();
+                return;
+            }
+            this.pushFunctionCallback("onCanplay", callback);
+        }
+    }, {
+        key: "offCanplay",
+        value: function offCanplay(callback) {
+            this.removeFunctionCallback("onCanplay", callback);
+        }
+    }, {
+        key: "onWaiting",
+        value: function onWaiting(callback) {
+            if (this.audioId === undefined && this.isWaiting) {
+                callback();
+                return;
+            }
+            this.pushFunctionCallback("onWaiting", callback);
+        }
+    }, {
+        key: "offWaiting",
+        value: function offWaiting(callback) {
+            this.removeFunctionCallback("onWaiting", callback);
+        }
 
         // callback function tool
 
@@ -232,6 +352,7 @@ var InnerAudioContext = function () {
             var argc = arguments.length;
             var args = arguments;
             var errArr = [];
+
             cbFunctionArray.forEach(function (cb) {
                 if (typeof cb !== "function") {
                     return;
