@@ -15,10 +15,6 @@ Runtime 的音频接口是 AudioEngine，与微信的 InnerAudioContext 音频�
 - number buffered
 - InnerAudioContext.onTimeUpdate(function callback)
 - InnerAudioContext.offTimeUpdate(function callback)
-- InnerAudioContext.onSeeking(function callback)
-- InnerAudioContext.onSeeking(function callback)
-- InnerAudioContext.onSeeked(function callback)
-- InnerAudioContext.offSeeked(function callback)
 
 ### 编译说明
 - 进入到 runtime2wx-adapter 目录下，先执行 npm install，然后再执行 gulp，会生成 rt-wx-adapter.js 放置在 runtime2wx-adapter/test/assets/Adapter 目录下

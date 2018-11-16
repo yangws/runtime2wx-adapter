@@ -101,30 +101,8 @@ class InnerAudioContext {
             return;
         }
 
-        if (this.src.search("http://") !== -1) {
-            var format;
-            if (this.src.search(".mp3") !== -1) {
-                format = ".mp3";
-            } else if (this.src.search(".ogg") !== -1) {
-                format = ".ogg";
-            } else if (this.src.search(".wav") !== -1) {
-                format = ".wav";
-            } else if (this.src.search(".mid") !== -1) {
-                format = ".mid";
-            } else {
-                format = undefined;
-            }
+        if (this.src.search("http://") !== -1 || this.src.search("https://") !== -1) {
 
-            var fileName;
-            if (format !== undefined) {
-                fileName = this.src.substring(this.src.indexOf(format) - 8, this.src.indexOf(format));
-                this.filePath = `${rt.env.USER_DATA_PATH}/` + fileName + format;
-            } else {
-                fileName = "unKnowMusic";
-                this.filePath = `${rt.env.USER_DATA_PATH}/` + fileName;
-            }
-
-            var fileIsExist;
             var fileExist = function () {
                 this.playing();
             }.bind(this);
@@ -133,8 +111,9 @@ class InnerAudioContext {
             var fileNotExist = function () {
                 var task = rt.downloadFile({
                     url: this.src,
-                    filePath: this.filePath,
-                    success() {
+                    filePath: "",
+                    success(msg) {
+                        self.filePath = msg["tempFilePath"];
                         self.playing();
                     },
                     fail() {
@@ -477,6 +456,7 @@ class InnerAudioContext {
             throw (errArr.join("\n"));
         }
     }
+
 }
 
 module.exports = InnerAudioContext;
