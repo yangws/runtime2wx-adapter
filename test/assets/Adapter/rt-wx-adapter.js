@@ -6,20 +6,25 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var audioEngine;
+var rt = loadRuntime();
 
 var InnerAudioContext = function () {
     function InnerAudioContext() {
         _classCallCheck(this, InnerAudioContext);
 
-        audioEngine = loadRuntime().AudioEngine;
+        audioEngine = rt.AudioEngine;
 
         this.src = null;
+        this.filePath = null;
         this.cbFunctionArrayMap = {};
         this.endCb = null;
         this.inLoop = false;
         this.inVolume = 1.0;
         this.inAutoplay = false;
         this.isStop = false;
+        this.isWaiting = false;
+        this.isSeeking = false;
+        this.isSeeked = false;
         this.audioId = undefined;
         this.PLAYING = 1;
         this.PAUSE = 2;
@@ -39,6 +44,60 @@ var InnerAudioContext = function () {
                 return;
             }
 
+            if (this.src.search("http://") !== -1 || this.src.search("https://") !== -1) {
+
+                var fileExist = function () {
+                    this.playing();
+                }.bind(this);
+
+                var self = this;
+                var fileNotExist = function () {
+                    var task = rt.downloadFile({
+                        url: this.src,
+                        filePath: "",
+                        success: function success(msg) {
+                            self.filePath = msg["tempFilePath"];
+                            self.playing();
+                        },
+                        fail: function fail() {
+                            console.error("InnerAudioContext play: downloadFile fail");
+                            var cbArray = self.getFunctionCallbackArray("onError");
+                            if (cbArray !== undefined) {
+                                var res = { errMsg: "downloadFile fail", errCode: 10002 };
+                                self.onFunctionCallback(cbArray, res);
+                            }
+                            return;
+                        },
+                        complete: function complete() {
+                            self.isWaiting = false;
+                        }
+                    });
+                    task.onProgressUpdate(function (msg) {
+                        if (!self.isWaiting) {
+                            self.isWaiting = true;
+
+                            var cbArray = self.getFunctionCallbackArray("onWaiting");
+                            if (cbArray !== undefined) {
+                                self.onFunctionCallback(cbArray);
+                            }
+                        }
+                    });
+                }.bind(this);
+
+                var fileManager = rt.getFileSystemManager();
+                fileManager.access({
+                    path: this.filePath,
+                    success: fileExist,
+                    fail: fileNotExist
+                });
+            } else {
+                this.filePath = this.src;
+                this.playing();
+            }
+        }
+    }, {
+        key: "playing",
+        value: function playing() {
             if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
                 if (this.audioId !== undefined) {
                     audioEngine.resume(this.audioId);
@@ -47,27 +106,30 @@ var InnerAudioContext = function () {
                 }
             } else {
                 if (this.audioId === undefined) {
-                    this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
+                    var cbArray = this.getFunctionCallbackArray("onCanplay");
+                    if (cbArray !== undefined) {
+                        this.onFunctionCallback(cbArray);
+                    }
+
+                    this.audioId = audioEngine.play(this.filePath, this.inLoop, this.inVolume);
                     this.isStop = false;
+
+                    var cbArray2 = this.getFunctionCallbackArray("onPlay");
+                    if (cbArray2 !== undefined) {
+                        this.onFunctionCallback(cbArray2);
+                    }
                 } else if (this.audioId !== undefined && this.loop === false && audioEngine.getState(this.audioId) !== this.PLAYING) {
                     this.audioId = undefined;
-                    this.audioId = audioEngine.play(this.src, this.loop, this.inVolume);
+                    this.audioId = audioEngine.play(this.filePath, this.loop, this.inVolume);
                 } else {
                     return;
                 }
-            }
-
-            var cbArray = this.getFunctionCallbackArray("onPlay");
-            if (cbArray !== undefined) {
-                this.onFunctionCallback(cbArray);
             }
 
             if (this.audioId !== undefined) {
                 if (this.endCb !== null) {
                     audioEngine.setFinishCallback(this.audioId, this.endCb);
                 }
-            } else {
-                console.warn("InnerAudioContext onEnded: currently is no music");
             }
         }
     }, {
@@ -108,7 +170,20 @@ var InnerAudioContext = function () {
         key: "seek",
         value: function seek(position) {
             if (this.audioId !== undefined) {
+                this.isSeeking = true;
+                this.isSeeked = true;
+
+                var cbArray = this.getFunctionCallbackArray("onSeeking");
+                if (cbArray !== undefined) {
+                    this.onFunctionCallback(cbArray);
+                }
+
                 audioEngine.setCurrentTime(this.audioId, position);
+
+                var cbArray2 = this.getFunctionCallbackArray("onSeeked");
+                if (cbArray2 !== undefined) {
+                    this.onFunctionCallback(cbArray2);
+                }
             } else {
                 console.warn("InnerAudioContext seek: currently is no music");
             }
@@ -117,6 +192,7 @@ var InnerAudioContext = function () {
         key: "destroy",
         value: function destroy() {
             audioEngine.end();
+            this.cbFunctionArrayMap = {};
         }
     }, {
         key: "onEnded",
@@ -179,6 +255,74 @@ var InnerAudioContext = function () {
         value: function offStop(callback) {
             this.removeFunctionCallback("onStop", callback);
         }
+    }, {
+        key: "onError",
+        value: function onError(callback) {
+            this.pushFunctionCallback("onError", callback);
+        }
+    }, {
+        key: "offError",
+        value: function offError(callback) {
+            this.removeFunctionCallback("onError", callback);
+        }
+    }, {
+        key: "onCanplay",
+        value: function onCanplay(callback) {
+            if (this.audioId !== undefined) {
+                callback();
+                return;
+            }
+            this.pushFunctionCallback("onCanplay", callback);
+        }
+    }, {
+        key: "offCanplay",
+        value: function offCanplay(callback) {
+            this.removeFunctionCallback("onCanplay", callback);
+        }
+    }, {
+        key: "onWaiting",
+        value: function onWaiting(callback) {
+            if (this.audioId === undefined && this.isWaiting) {
+                callback();
+                return;
+            }
+            this.pushFunctionCallback("onWaiting", callback);
+        }
+    }, {
+        key: "offWaiting",
+        value: function offWaiting(callback) {
+            this.removeFunctionCallback("onWaiting", callback);
+        }
+    }, {
+        key: "onSeeking",
+        value: function onSeeking(callback) {
+            if (this.audioId !== undefined && this.isSeeking) {
+                this.isSeeking = false;
+                callback();
+                return;
+            }
+            this.pushFunctionCallback("onSeeking", callback);
+        }
+    }, {
+        key: "offSeeking",
+        value: function offSeeking(callback) {
+            this.removeFunctionCallback("onSeeking", callback);
+        }
+    }, {
+        key: "onSeeked",
+        value: function onSeeked(callback) {
+            if (this.audioId !== undefined && this.isSeeked) {
+                this.isSeeked = false;
+                callback();
+                return;
+            }
+            this.pushFunctionCallback("onSeeked", callback);
+        }
+    }, {
+        key: "offSeeked",
+        value: function offSeeked(callback) {
+            this.removeFunctionCallback("onSeeked", callback);
+        }
 
         // callback function tool
 
@@ -232,6 +376,7 @@ var InnerAudioContext = function () {
             var argc = arguments.length;
             var args = arguments;
             var errArr = [];
+
             cbFunctionArray.forEach(function (cb) {
                 if (typeof cb !== "function") {
                     return;
