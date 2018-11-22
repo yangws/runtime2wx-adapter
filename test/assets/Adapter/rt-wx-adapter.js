@@ -14,6 +14,8 @@ var InnerAudioContext = function () {
 
         audioEngine = rt.AudioEngine;
 
+        this.startTime = 0;
+        this.obeyMuteSwitch = false;
         this.src = null;
         this.filePath = null;
         this.cbFunctionArrayMap = {};
@@ -112,6 +114,9 @@ var InnerAudioContext = function () {
                     }
 
                     this.audioId = audioEngine.play(this.filePath, this.inLoop, this.inVolume);
+                    if (typeof this.startTime === "number" && this.startTime > 0) {
+                        audioEngine.setCurrentTime(this.audioId, this.startTime);
+                    }
                     this.isStop = false;
 
                     var cbArray2 = this.getFunctionCallbackArray("onPlay");
@@ -495,6 +500,17 @@ var InnerAudioContext = function () {
             }
             if (this.isStop) {
                 ret = true;
+            }
+            return ret;
+        }
+    }, {
+        key: "buffered",
+        get: function get() {
+            var ret = 0;
+            if (this.audioId !== undefined) {
+                if (typeof audioEngine.getBuffered === "function") {
+                    ret = audioEngine.getBuffered(this.audioId);
+                }
             }
             return ret;
         }

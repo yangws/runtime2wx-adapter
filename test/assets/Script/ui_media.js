@@ -130,6 +130,7 @@ module.exports = cc.Class({
         innerAudioContext.src = "http://ws.stream.qqmusic.qq.com/M500001VfvsJ21xFqb.mp3?guid=ffffffff82def4af4b12b3cd9337d5e7&uin=346897220&vkey=6292F51E1E384E061FF02C31F716658E5C81F5594D561F2E88B854E81CAAB7806D5E4F103E55D33C16F3FAC506D1AB172DE8600B37E43FAD&fromtag=46";
         innerAudioContext.loop = true;
         innerAudioContext.volume = this.volume;
+        innerAudioContext.startTime = 0;
         innerAudioContext.play();
 
         // innerAudioContext2.src = this.audioClip2.nativeUrl;
@@ -138,6 +139,24 @@ module.exports = cc.Class({
         // innerAudioContext2.play();
 
         this.audioItem.setEvent("开始播放音乐");
+    },
+
+    onClickButtonPlay10() {
+        //this.audioId = rt.AudioEngine.play(this.audioClip.nativeUrl, this.isLoop, this.volume);
+
+        //innerAudioContext.src = this.audioClip.nativeUrl;
+        innerAudioContext.src = "http://ws.stream.qqmusic.qq.com/M500001VfvsJ21xFqb.mp3?guid=ffffffff82def4af4b12b3cd9337d5e7&uin=346897220&vkey=6292F51E1E384E061FF02C31F716658E5C81F5594D561F2E88B854E81CAAB7806D5E4F103E55D33C16F3FAC506D1AB172DE8600B37E43FAD&fromtag=46";
+        innerAudioContext.loop = true;
+        innerAudioContext.volume = this.volume;
+        innerAudioContext.startTime = 10;
+        innerAudioContext.play();
+
+        // innerAudioContext2.src = this.audioClip2.nativeUrl;
+        // innerAudioContext2.loop = true;
+        // innerAudioContext2.volume = this.volume;
+        // innerAudioContext2.play();
+
+        this.audioItem.setEvent("从10秒开始播放音乐，仅对还没播放过音乐生效。");
     },
 
     onClickButtonStop() {
@@ -359,6 +378,11 @@ module.exports = cc.Class({
             lbl.string = "监听完成跳转";
             innerAudioContext.offSeeked(this.onSeekedCallback);
         }
+    },
+
+    onClickButtonBufferedCb(event) {
+        var buffered = innerAudioContext.buffered;
+        this.audioItem.setEvent("以缓冲时间：" + buffered);
     },
 
     onClickButtonIsPause() {
