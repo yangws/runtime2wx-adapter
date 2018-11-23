@@ -26,7 +26,7 @@ var InnerAudioContext = function () {
         this.isWaiting = false;
         this.isSeeking = false;
         this.isSeeked = false;
-        this.audioId = undefined;
+        this._audioId = undefined;
         this.PLAYING = 1;
         this.PAUSE = 2;
     }
@@ -99,22 +99,22 @@ var InnerAudioContext = function () {
     }, {
         key: "playing",
         value: function playing() {
-            if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
-                if (this.audioId !== undefined) {
-                    audioEngine.resume(this.audioId);
+            if (this._audioId !== undefined && audioEngine.getState(this._audioId) === this.PAUSE) {
+                if (this._audioId !== undefined) {
+                    audioEngine.resume(this._audioId);
                 } else {
                     console.warn("InnerAudioContext resume: currently is no music");
                 }
             } else {
-                if (this.audioId === undefined) {
+                if (this._audioId === undefined) {
                     var cbArray = this.getFunctionCallbackArray("onCanplay");
                     if (cbArray !== undefined) {
                         this.onFunctionCallback(cbArray);
                     }
 
-                    this.audioId = audioEngine.play(this.filePath, this.inLoop, this.inVolume);
+                    this._audioId = audioEngine.play(this.filePath, this.inLoop, this.inVolume);
                     if (typeof this.startTime === "number" && this.startTime > 0) {
-                        audioEngine.setCurrentTime(this.audioId, this.startTime);
+                        audioEngine.setCurrentTime(this._audioId, this.startTime);
                     }
                     this.isStop = false;
 
@@ -122,26 +122,26 @@ var InnerAudioContext = function () {
                     if (cbArray2 !== undefined) {
                         this.onFunctionCallback(cbArray2);
                     }
-                } else if (this.audioId !== undefined && this.loop === false && audioEngine.getState(this.audioId) !== this.PLAYING) {
-                    this.audioId = undefined;
-                    this.audioId = audioEngine.play(this.filePath, this.loop, this.inVolume);
+                } else if (this._audioId !== undefined && this.loop === false && audioEngine.getState(this._audioId) !== this.PLAYING) {
+                    this._audioId = undefined;
+                    this._audioId = audioEngine.play(this.filePath, this.loop, this.inVolume);
                 } else {
                     return;
                 }
             }
 
-            if (this.audioId !== undefined) {
+            if (this._audioId !== undefined) {
                 if (this.endCb !== null) {
-                    audioEngine.setFinishCallback(this.audioId, this.endCb);
+                    audioEngine.setFinishCallback(this._audioId, this.endCb);
                 }
             }
         }
     }, {
         key: "pause",
         value: function pause() {
-            if (this.audioId !== undefined) {
-                if (audioEngine.getState(this.audioId) !== this.PAUSE) {
-                    audioEngine.pause(this.audioId);
+            if (this._audioId !== undefined) {
+                if (audioEngine.getState(this._audioId) !== this.PAUSE) {
+                    audioEngine.pause(this._audioId);
                 } else {
                     console.warn("InnerAudioContext pause: currently music was pause");
                 }
@@ -157,9 +157,9 @@ var InnerAudioContext = function () {
     }, {
         key: "stop",
         value: function stop() {
-            if (this.audioId !== undefined) {
-                audioEngine.stop(this.audioId);
-                this.audioId = undefined;
+            if (this._audioId !== undefined) {
+                audioEngine.stop(this._audioId);
+                this._audioId = undefined;
                 this.isStop = true;
             } else {
                 console.warn("InnerAudioContext stop: currently is no music");
@@ -173,7 +173,7 @@ var InnerAudioContext = function () {
     }, {
         key: "seek",
         value: function seek(position) {
-            if (this.audioId !== undefined) {
+            if (this._audioId !== undefined) {
                 this.isSeeking = true;
                 this.isSeeked = true;
 
@@ -182,7 +182,7 @@ var InnerAudioContext = function () {
                     this.onFunctionCallback(cbArray);
                 }
 
-                audioEngine.setCurrentTime(this.audioId, position);
+                audioEngine.setCurrentTime(this._audioId, position);
 
                 var cbArray2 = this.getFunctionCallbackArray("onSeeked");
                 if (cbArray2 !== undefined) {
@@ -203,8 +203,8 @@ var InnerAudioContext = function () {
         value: function onEnded(callback) {
             if (this.endCb === null) {
                 this.endCb = callback;
-                if (this.audioId !== undefined) {
-                    audioEngine.setFinishCallback(this.audioId, this.endCb);
+                if (this._audioId !== undefined) {
+                    audioEngine.setFinishCallback(this._audioId, this.endCb);
                 } else {
                     console.warn("InnerAudioContext onEnded: currently is no music");
                 }
@@ -220,7 +220,7 @@ var InnerAudioContext = function () {
     }, {
         key: "onPlay",
         value: function onPlay(callback) {
-            if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PLAYING) {
+            if (this._audioId !== undefined && audioEngine.getState(this._audioId) === this.PLAYING) {
                 callback();
                 return;
             }
@@ -234,7 +234,7 @@ var InnerAudioContext = function () {
     }, {
         key: "onPause",
         value: function onPause(callback) {
-            if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
+            if (this._audioId !== undefined && audioEngine.getState(this._audioId) === this.PAUSE) {
                 callback();
                 return;
             }
@@ -272,7 +272,7 @@ var InnerAudioContext = function () {
     }, {
         key: "onCanplay",
         value: function onCanplay(callback) {
-            if (this.audioId !== undefined) {
+            if (this._audioId !== undefined) {
                 callback();
                 return;
             }
@@ -286,7 +286,7 @@ var InnerAudioContext = function () {
     }, {
         key: "onWaiting",
         value: function onWaiting(callback) {
-            if (this.audioId === undefined && this.isWaiting) {
+            if (this._audioId === undefined && this.isWaiting) {
                 callback();
                 return;
             }
@@ -300,7 +300,7 @@ var InnerAudioContext = function () {
     }, {
         key: "onSeeking",
         value: function onSeeking(callback) {
-            if (this.audioId !== undefined && this.isSeeking) {
+            if (this._audioId !== undefined && this.isSeeking) {
                 this.isSeeking = false;
                 callback();
                 return;
@@ -315,7 +315,7 @@ var InnerAudioContext = function () {
     }, {
         key: "onSeeked",
         value: function onSeeked(callback) {
-            if (this.audioId !== undefined && this.isSeeked) {
+            if (this._audioId !== undefined && this.isSeeked) {
                 this.isSeeked = false;
                 callback();
                 return;
@@ -430,30 +430,30 @@ var InnerAudioContext = function () {
         key: "volume",
         get: function get() {
             var ret = 1.0;
-            if (this.audioId !== undefined) {
-                ret = audioEngine.getVolume(this.audioId);
+            if (this._audioId !== undefined) {
+                ret = audioEngine.getVolume(this._audioId);
             }
             return ret;
         },
         set: function set(value) {
             this.inVolume = value;
-            if (this.audioId !== undefined) {
-                audioEngine.setVolume(this.audioId, value);
+            if (this._audioId !== undefined) {
+                audioEngine.setVolume(this._audioId, value);
             }
         }
     }, {
         key: "loop",
         get: function get() {
             var ret = false;
-            if (this.audioId !== undefined) {
-                ret = audioEngine.isLoop(this.audioId);
+            if (this._audioId !== undefined) {
+                ret = audioEngine.isLoop(this._audioId);
             }
             return ret;
         },
         set: function set(value) {
             this.inLoop = value;
-            if (this.audioId !== undefined) {
-                audioEngine.setLoop(this.audioId, value);
+            if (this._audioId !== undefined) {
+                audioEngine.setLoop(this._audioId, value);
             }
         }
     }, {
@@ -474,8 +474,8 @@ var InnerAudioContext = function () {
         key: "duration",
         get: function get() {
             var ret = 0;
-            if (this.audioId !== undefined) {
-                ret = audioEngine.getDuration(this.audioId);
+            if (this._audioId !== undefined) {
+                ret = audioEngine.getDuration(this._audioId);
             }
             return ret;
         }
@@ -483,8 +483,8 @@ var InnerAudioContext = function () {
         key: "currentTime",
         get: function get() {
             var ret = 0;
-            if (this.audioId !== undefined) {
-                ret = audioEngine.getCurrentTime(this.audioId);
+            if (this._audioId !== undefined) {
+                ret = audioEngine.getCurrentTime(this._audioId);
             }
             return ret;
         }
@@ -492,8 +492,8 @@ var InnerAudioContext = function () {
         key: "paused",
         get: function get() {
             var ret = false;
-            if (this.audioId !== undefined) {
-                if (audioEngine.getState(this.audioId) === this.PAUSE) {
+            if (this._audioId !== undefined) {
+                if (audioEngine.getState(this._audioId) === this.PAUSE) {
                     ret = true;
                 }
             }
@@ -506,9 +506,9 @@ var InnerAudioContext = function () {
         key: "buffered",
         get: function get() {
             var ret = 0;
-            if (this.audioId !== undefined) {
+            if (this._audioId !== undefined) {
                 if (typeof audioEngine.getBuffered === "function") {
-                    ret = audioEngine.getBuffered(this.audioId);
+                    ret = audioEngine.getBuffered(this._audioId);
                 }
             }
             return ret;
@@ -516,9 +516,9 @@ var InnerAudioContext = function () {
     }, {
         key: "obeyMuteSwitch",
         set: function set(value) {
-            if (this.audioId !== undefined) {
+            if (this._audioId !== undefined) {
                 if (typeof audioEngine.setObeyMuteSwitch === "function") {
-                    audioEngine.setObeyMuteSwitch(this.audioId, value);
+                    audioEngine.setObeyMuteSwitch(this._audioId, value);
                 }
             }
         }
@@ -527,9 +527,9 @@ var InnerAudioContext = function () {
         ,
         get: function get() {
             var ret = false;
-            if (this.audioId !== undefined) {
+            if (this._audioId !== undefined) {
                 if (typeof audioEngine.getObeyMuteSwitch === "function") {
-                    ret = audioEngine.getObeyMuteSwitch(this.audioId);
+                    ret = audioEngine.getObeyMuteSwitch(this._audioId);
                 }
             }
             return ret;
