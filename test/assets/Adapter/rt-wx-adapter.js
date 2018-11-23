@@ -15,7 +15,6 @@ var InnerAudioContext = function () {
         audioEngine = rt.AudioEngine;
 
         this.startTime = 0;
-        this.obeyMuteSwitch = false;
         this.src = null;
         this.filePath = null;
         this.cbFunctionArrayMap = {};
@@ -510,6 +509,27 @@ var InnerAudioContext = function () {
             if (this.audioId !== undefined) {
                 if (typeof audioEngine.getBuffered === "function") {
                     ret = audioEngine.getBuffered(this.audioId);
+                }
+            }
+            return ret;
+        }
+    }, {
+        key: "obeyMuteSwitch",
+        set: function set(value) {
+            if (this.audioId !== undefined) {
+                if (typeof audioEngine.setObeyMuteSwitch === "function") {
+                    audioEngine.setObeyMuteSwitch(this.audioId, value);
+                }
+            }
+        }
+
+        // only read attribute
+        ,
+        get: function get() {
+            var ret = false;
+            if (this.audioId !== undefined) {
+                if (typeof audioEngine.getObeyMuteSwitch === "function") {
+                    ret = audioEngine.getObeyMuteSwitch(this.audioId);
                 }
             }
             return ret;

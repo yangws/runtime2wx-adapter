@@ -7,7 +7,6 @@ class InnerAudioContext {
         audioEngine = rt.AudioEngine;
 
         this.startTime = 0;
-        this.obeyMuteSwitch = false;
         this.src = null;
         this.filePath = null;
         this.cbFunctionArrayMap = {};
@@ -101,6 +100,25 @@ class InnerAudioContext {
         if (this.audioId !== undefined) {
             if (typeof audioEngine.getBuffered === "function") {
                 ret = audioEngine.getBuffered(this.audioId);
+            }
+        }
+        return ret;
+    }
+
+    set obeyMuteSwitch(value) {
+        if (this.audioId !== undefined) {
+            if (typeof audioEngine.setObeyMuteSwitch === "function") {
+                audioEngine.setObeyMuteSwitch(this.audioId, value);
+            }
+        }
+    }
+
+    // only read attribute
+    get obeyMuteSwitch() {
+        var ret = false;
+        if (this.audioId !== undefined) {
+            if (typeof audioEngine.getObeyMuteSwitch === "function") {
+                ret = audioEngine.getObeyMuteSwitch(this.audioId);
             }
         }
         return ret;
