@@ -10,9 +10,6 @@ Runtime 的音频接口是 AudioEngine，与微信的 InnerAudioContext 音频�
 
 
 ### 不支持的API
-- number startTime
-- boolean obeyMuteSwitch
-- number buffered
 - InnerAudioContext.onTimeUpdate(function callback)
 - InnerAudioContext.offTimeUpdate(function callback)
 
