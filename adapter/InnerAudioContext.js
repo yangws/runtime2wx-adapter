@@ -12,7 +12,7 @@ var _isSeeking = false;
 var _isSeeked = false;
 var _PLAYING = 1;
 var _PAUSE = 2;
-var _playing = function() {
+var _playing = function () {
     if (_audioId !== undefined && audioEngine.getState(_audioId) === _PAUSE) {
         if (_audioId !== undefined) {
             audioEngine.resume(_audioId);
@@ -59,7 +59,7 @@ var _playing = function() {
     }
 }
 // callback function tool
-var _pushFunctionCallback = function(name, cb) {
+var _pushFunctionCallback = function (name, cb) {
     if (typeof name !== "string" || typeof cb !== "function") {
         return;
     }
@@ -76,7 +76,7 @@ var _pushFunctionCallback = function(name, cb) {
     arr.push(cb);
 }
 
-var _removeFunctionCallback = function(name, cb) {
+var _removeFunctionCallback = function (name, cb) {
     var arr = _cbFunctionArrayMap[name];
     if (arr === undefined) {
         return;
@@ -89,7 +89,7 @@ var _removeFunctionCallback = function(name, cb) {
     }
 }
 
-var _getFunctionCallbackArray = function(name) {
+var _getFunctionCallbackArray = function (name) {
     var arr = _cbFunctionArrayMap[name];
     if (arr === undefined) {
         return undefined;
@@ -97,7 +97,7 @@ var _getFunctionCallbackArray = function(name) {
     return arr;
 }
 
-var _onFunctionCallback = function(cbFunctionArray) {
+var _onFunctionCallback = function (cbFunctionArray) {
     if (cbFunctionArray === undefined) {
         return;
     }
@@ -152,7 +152,7 @@ var _onFunctionCallback = function(cbFunctionArray) {
     }
 }
 var _shouldUpdate = false;
-var _updateProgress = function() {
+var _updateProgress = function () {
     setTimeout(() => {
         // callback
         var cbArray = _getFunctionCallbackArray("onTimeUpdate");
@@ -243,7 +243,7 @@ class InnerAudioContext {
         if (_audioId !== undefined) {
             ret = audioEngine.getCurrentTime(_audioId);
         }
-        return ret;
+        return ret.toFixed(6);
     }
 
     get paused() {
