@@ -36,6 +36,7 @@ module.exports = cc.Class({
         this._super();
         this.node_volume_template.active = false;
 
+        this.listenTimeUpdate = false;
         this._testAudio();
     },
 
@@ -52,7 +53,7 @@ module.exports = cc.Class({
             // if (this.audioId !== undefined) {
             //     rt.AudioEngine.setVolume(this.audioId, this.volume);
             // }
-            if (innerAudioContext.audioId !== undefined) {
+            if (innerAudioContext.paused === false) {
                 innerAudioContext.volume = this.volume;
                 this.audioItem.setEvent("设置音乐音量为:" + this.volume);
             } else {
@@ -385,6 +386,31 @@ module.exports = cc.Class({
         this.audioItem.setEvent("以缓冲时间：" + buffered);
     },
 
+    onClickButtonTimeUpdateCb(event) {
+        var node = event.target;
+        var button = node.getComponent(cc.Button);
+        var lbl = button.node.getChildByName("Label").getComponent(cc.Label);
+
+        this.listenTimeUpdate = !this.listenTimeUpdate;
+        if (this.timeUpdateCb === undefined) {
+            this.timeUpdateCb = function () {
+                var currentTime = innerAudioContext.currentTime;
+                var duration = innerAudioContext.duration;
+                this.timeSlider.progress = currentTime / duration;
+                this.audioItem.setEvent("当前进度为：" + Math.floor(currentTime / duration * 100) / 100);
+            }.bind(this);
+        }
+        if (this.listenTimeUpdate === true) {
+            // 监听
+            innerAudioContext.onTimeUpdate(this.timeUpdateCb);
+            lbl.string = "取消监听进度";
+        } else {
+            // 取消监听
+            innerAudioContext.offTimeUpdate(this.timeUpdateCb);
+            lbl.string = "监听进度";
+        }
+    },
+
     onClickButtonIsPause() {
         if (innerAudioContext.paused) {
             this.audioItem.setEvent("当前是暂停或停止状态");
@@ -427,7 +453,7 @@ module.exports = cc.Class({
             // } else {
             //     this.audioItem.setEvent("当前无音乐");
             // }
-            if (innerAudioContext.audioId !== undefined) {
+            if (innerAudioContext.paused === false) {
                 var total = innerAudioContext.duration;
                 var current = total * timeSlider.progress;
                 innerAudioContext.seek(current);
@@ -437,6 +463,7 @@ module.exports = cc.Class({
             }
 
         }.bind(this);
+        this.timeSlider = timeSlider;
 
         item.setEvent = function (event) {
             var color = res.color.green;
