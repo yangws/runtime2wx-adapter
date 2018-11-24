@@ -12,6 +12,52 @@ var _isSeeking = false;
 var _isSeeked = false;
 var _PLAYING = 1;
 var _PAUSE = 2;
+var _playing = function() {
+    if (_audioId !== undefined && audioEngine.getState(_audioId) === _PAUSE) {
+        if (_audioId !== undefined) {
+            audioEngine.resume(_audioId);
+            _beginUpdateProgress();
+        } else {
+            console.warn("InnerAudioContext resume: currently is no music");
+        }
+    } else {
+        if (_audioId === undefined) {
+            var cbArray = _getFunctionCallbackArray("onCanplay");
+            if (cbArray !== undefined) {
+                _onFunctionCallback(cbArray);
+            }
+
+            _audioId = audioEngine.play(_filePath, _inLoop, _inVolume);
+            if (typeof this.startTime === "number" && this.startTime > 0) {
+                audioEngine.setCurrentTime(_audioId, this.startTime);
+            }
+            _isStop = false;
+
+            var cbArray2 = _getFunctionCallbackArray("onPlay");
+            if (cbArray2 !== undefined) {
+                _onFunctionCallback(cbArray2);
+            }
+
+            _beginUpdateProgress();
+
+        } else if (_audioId !== undefined && this.loop === false && audioEngine.getState(_audioId) !== _PLAYING) {
+            _audioId = undefined;
+            _audioId = audioEngine.play(_filePath, this.loop, _inVolume);
+            if (typeof this.startTime === "number" && this.startTime > 0) {
+                audioEngine.setCurrentTime(_audioId, this.startTime);
+            }
+            _beginUpdateProgress();
+        } else {
+            return;
+        }
+    }
+
+    if (_audioId !== undefined) {
+        if (_endCb !== null) {
+            audioEngine.setFinishCallback(_audioId, _endCb);
+        }
+    }
+}
 // callback function tool
 var _pushFunctionCallback = function(name, cb) {
     if (typeof name !== "string" || typeof cb !== "function") {
@@ -104,6 +150,31 @@ var _onFunctionCallback = function(cbFunctionArray) {
     if (errArr.length > 0) {
         throw (errArr.join("\n"));
     }
+}
+var _shouldUpdate = false;
+var _updateProgress = function() {
+    setTimeout(() => {
+        // callback
+        var cbArray = _getFunctionCallbackArray("onTimeUpdate");
+        if (cbArray !== undefined && _audioId !== undefined) {
+            var playing = audioEngine.getState(_audioId) === _PLAYING;
+            _onFunctionCallback(cbArray);
+            if (playing === false) {
+                _shouldUpdate = false;
+            }
+        }
+        // update
+        if (_shouldUpdate === true) {
+            _updateProgress();
+        }
+    }, 500);
+}
+var _beginUpdateProgress = function () {
+    if (_shouldUpdate === true) {
+        return;
+    }
+    _shouldUpdate = true;
+    _updateProgress();
 }
 var rt = loadRuntime();
 
@@ -227,7 +298,8 @@ class InnerAudioContext {
         if (this.src.search("http://") !== -1 || this.src.search("https://") !== -1) {
 
             var fileExist = function () {
-                this.playing();
+                var playing = _playing.bind(this);
+                playing();
             }.bind(this);
 
             var self = this;
@@ -237,28 +309,29 @@ class InnerAudioContext {
                     filePath: "",
                     success(msg) {
                         _filePath = msg["tempFilePath"];
-                        self.playing();
+                        var playing = _playing.bind(self);
+                        playing();
                     },
                     fail() {
                         console.error("InnerAudioContext play: downloadFile fail");
-                        var cbArray = self.getFunctionCallbackArray("onError");
+                        var cbArray = _getFunctionCallbackArray("onError");
                         if (cbArray !== undefined) {
                             var res = { errMsg: "downloadFile fail", errCode: 10002 };
-                            self.onFunctionCallback(cbArray, res);
+                            _onFunctionCallback(cbArray, res);
                         }
                         return;
                     },
                     complete() {
-                        self.isWaiting = false;
+                        _isWaiting = false;
                     },
                 });
                 task.onProgressUpdate(function (msg) {
-                    if (!self.isWaiting) {
-                        self.isWaiting = true;
+                    if (!_isWaiting) {
+                        _isWaiting = true;
 
-                        var cbArray = self.getFunctionCallbackArray("onWaiting");
+                        var cbArray = _getFunctionCallbackArray("onWaiting");
                         if (cbArray !== undefined) {
-                            self.onFunctionCallback(cbArray);
+                            _onFunctionCallback(cbArray);
                         }
                     }
 
@@ -274,47 +347,8 @@ class InnerAudioContext {
 
         } else {
             _filePath = this.src;
-            this.playing();
-        }
-    }
-
-    playing() {
-        if (_audioId !== undefined && audioEngine.getState(_audioId) === _PAUSE) {
-            if (_audioId !== undefined) {
-                audioEngine.resume(_audioId);
-            } else {
-                console.warn("InnerAudioContext resume: currently is no music");
-            }
-        } else {
-            if (_audioId === undefined) {
-                var cbArray = _getFunctionCallbackArray("onCanplay");
-                if (cbArray !== undefined) {
-                    _onFunctionCallback(cbArray);
-                }
-
-                _audioId = audioEngine.play(_filePath, _inLoop, _inVolume);
-                if (typeof this.startTime === "number" && this.startTime > 0) {
-                    audioEngine.setCurrentTime(_audioId, this.startTime);
-                }
-                _isStop = false;
-
-                var cbArray2 = _getFunctionCallbackArray("onPlay");
-                if (cbArray2 !== undefined) {
-                    _onFunctionCallback(cbArray2);
-                }
-
-            } else if (_audioId !== undefined && this.loop === false && audioEngine.getState(_audioId) !== _PLAYING) {
-                _audioId = undefined;
-                _audioId = audioEngine.play(_filePath, this.loop, _inVolume);
-            } else {
-                return;
-            }
-        }
-
-        if (_audioId !== undefined) {
-            if (_endCb !== null) {
-                audioEngine.setFinishCallback(_audioId, _endCb);
-            }
+            var playing = _playing.bind(this);
+            playing();
         }
     }
 
@@ -487,6 +521,14 @@ class InnerAudioContext {
 
     offSeeked(callback) {
         _removeFunctionCallback("onSeeked", callback);
+    }
+
+    onTimeUpdate(callback) {
+        _pushFunctionCallback("onTimeUpdate", callback);
+    }
+
+    offTimeUpdate(callback) {
+        _removeFunctionCallback("onTimeUpdate", callback);
     }
 }
 
