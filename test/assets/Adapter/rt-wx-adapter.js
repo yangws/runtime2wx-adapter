@@ -141,7 +141,7 @@ var InnerAudioContext = function () {
             if (this._audioId !== undefined && audioEngine.getState(this._audioId) === this._PAUSE) {
                 if (this._audioId !== undefined) {
                     audioEngine.resume(this._audioId);
-                    this.beginUpdateProgress();
+                    this._beginUpdateProgress();
                 } else {
                     console.warn("InnerAudioContext resume: currently is no music");
                 }
@@ -163,14 +163,14 @@ var InnerAudioContext = function () {
                         _onFunctionCallback(cbArray2);
                     }
 
-                    this.beginUpdateProgress();
+                    this._beginUpdateProgress();
                 } else if (this._audioId !== undefined && this.loop === false && audioEngine.getState(this._audioId) !== this._PLAYING) {
                     this._audioId = undefined;
                     this._audioId = audioEngine.play(this.src, this.loop, this._inVolume);
                     if (typeof this.startTime === "number" && this.startTime > 0) {
                         audioEngine.setCurrentTime(this._audioId, this.startTime);
                     }
-                    this.beginUpdateProgress();
+                    this._beginUpdateProgress();
                 } else {
                     return;
                 }
@@ -387,8 +387,8 @@ var InnerAudioContext = function () {
         //private
 
     }, {
-        key: "updateProgress",
-        value: function updateProgress() {
+        key: "_updateProgress",
+        value: function _updateProgress() {
             var _this = this;
 
             setTimeout(function () {
@@ -403,18 +403,18 @@ var InnerAudioContext = function () {
                 }
                 // update
                 if (_this._shouldUpdate === true) {
-                    _this.updateProgress();
+                    _this._updateProgress();
                 }
             }, 500);
         }
     }, {
-        key: "beginUpdateProgress",
-        value: function beginUpdateProgress() {
+        key: "_beginUpdateProgress",
+        value: function _beginUpdateProgress() {
             if (this._shouldUpdate === true) {
                 return;
             }
             this._shouldUpdate = true;
-            this.updateProgress();
+            this._updateProgress();
         }
     }, {
         key: "volume",

@@ -228,7 +228,7 @@ class InnerAudioContext {
         if (this._audioId !== undefined && audioEngine.getState(this._audioId) === this._PAUSE) {
             if (this._audioId !== undefined) {
                 audioEngine.resume(this._audioId);
-                this.beginUpdateProgress();
+                this._beginUpdateProgress();
             } else {
                 console.warn("InnerAudioContext resume: currently is no music");
             }
@@ -250,7 +250,7 @@ class InnerAudioContext {
                     _onFunctionCallback(cbArray2);
                 }
 
-                this.beginUpdateProgress();
+                this._beginUpdateProgress();
 
             } else if (this._audioId !== undefined && this.loop === false && audioEngine.getState(this._audioId) !== this._PLAYING) {
                 this._audioId = undefined;
@@ -258,7 +258,7 @@ class InnerAudioContext {
                 if (typeof this.startTime === "number" && this.startTime > 0) {
                     audioEngine.setCurrentTime(this._audioId, this.startTime);
                 }
-                this.beginUpdateProgress();
+                this._beginUpdateProgress();
             } else {
                 return;
             }
@@ -451,7 +451,7 @@ class InnerAudioContext {
     }
 
     //private
-    updateProgress() {
+    _updateProgress() {
         setTimeout(() => {
             // callback
             var cbArray = _getFunctionCallbackArray("onTimeUpdate");
@@ -464,17 +464,17 @@ class InnerAudioContext {
             }
             // update
             if (this._shouldUpdate === true) {
-                this.updateProgress();
+                this._updateProgress();
             }
         }, 500);
     }
 
-    beginUpdateProgress() {
+    _beginUpdateProgress() {
         if (this._shouldUpdate === true) {
             return;
         }
         this._shouldUpdate = true;
-        this.updateProgress();
+        this._updateProgress();
     }
 }
 
