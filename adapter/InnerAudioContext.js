@@ -1,63 +1,7 @@
 var audioEngine;
-var _audioId = undefined;
-var _filePath = null;
+var rt = loadRuntime();
 var _cbFunctionArrayMap = {};
-var _endCb = null;
-var _inLoop = false;
-var _inVolume = 1.0;
-var _inAutoplay = false;
-var _isStop = false;
-var _isWaiting = false;
-var _isSeeking = false;
-var _isSeeked = false;
-var _PLAYING = 1;
-var _PAUSE = 2;
-var _playing = function () {
-    if (_audioId !== undefined && audioEngine.getState(_audioId) === _PAUSE) {
-        if (_audioId !== undefined) {
-            audioEngine.resume(_audioId);
-            _beginUpdateProgress();
-        } else {
-            console.warn("InnerAudioContext resume: currently is no music");
-        }
-    } else {
-        if (_audioId === undefined) {
-            var cbArray = _getFunctionCallbackArray("onCanplay");
-            if (cbArray !== undefined) {
-                _onFunctionCallback(cbArray);
-            }
 
-            _audioId = audioEngine.play(_filePath, _inLoop, _inVolume);
-            if (typeof this.startTime === "number" && this.startTime > 0) {
-                audioEngine.setCurrentTime(_audioId, this.startTime);
-            }
-            _isStop = false;
-
-            var cbArray2 = _getFunctionCallbackArray("onPlay");
-            if (cbArray2 !== undefined) {
-                _onFunctionCallback(cbArray2);
-            }
-
-            _beginUpdateProgress();
-
-        } else if (_audioId !== undefined && this.loop === false && audioEngine.getState(_audioId) !== _PLAYING) {
-            _audioId = undefined;
-            _audioId = audioEngine.play(_filePath, this.loop, _inVolume);
-            if (typeof this.startTime === "number" && this.startTime > 0) {
-                audioEngine.setCurrentTime(_audioId, this.startTime);
-            }
-            _beginUpdateProgress();
-        } else {
-            return;
-        }
-    }
-
-    if (_audioId !== undefined) {
-        if (_endCb !== null) {
-            audioEngine.setFinishCallback(_audioId, _endCb);
-        }
-    }
-}
 // callback function tool
 var _pushFunctionCallback = function (name, cb) {
     if (typeof name !== "string" || typeof cb !== "function") {
@@ -151,32 +95,6 @@ var _onFunctionCallback = function (cbFunctionArray) {
         throw (errArr.join("\n"));
     }
 }
-var _shouldUpdate = false;
-var _updateProgress = function () {
-    setTimeout(() => {
-        // callback
-        var cbArray = _getFunctionCallbackArray("onTimeUpdate");
-        if (cbArray !== undefined && _audioId !== undefined) {
-            var playing = audioEngine.getState(_audioId) === _PLAYING;
-            _onFunctionCallback(cbArray);
-            if (playing === false) {
-                _shouldUpdate = false;
-            }
-        }
-        // update
-        if (_shouldUpdate === true) {
-            _updateProgress();
-        }
-    }, 500);
-}
-var _beginUpdateProgress = function () {
-    if (_shouldUpdate === true) {
-        return;
-    }
-    _shouldUpdate = true;
-    _updateProgress();
-}
-var rt = loadRuntime();
 
 class InnerAudioContext {
 
@@ -185,45 +103,57 @@ class InnerAudioContext {
 
         this.startTime = 0;
         this.src = null;
+        this.audioId = undefined;
+        this.endCb = null;
+        this.inLoop = false;
+        this.inVolume = 1.0;
+        this.inAutoplay = false;
+        this.isStop = false;
+        this.isWaiting = false;
+        this.isSeeking = false;
+        this.isSeeked = false;
+        this.PLAYING = 1;
+        this.PAUSE = 2;
+        this.shouldUpdate = false;
     }
 
     // read-write attribute
     get volume() {
         var ret = 1.0;
-        if (_audioId !== undefined) {
-            ret = audioEngine.getVolume(_audioId);
+        if (this.audioId !== undefined) {
+            ret = audioEngine.getVolume(this.audioId);
         }
         return ret;
     }
 
     set volume(value) {
-        _inVolume = value;
-        if (_audioId !== undefined) {
-            audioEngine.setVolume(_audioId, value);
+        this.inVolume = value;
+        if (this.audioId !== undefined) {
+            audioEngine.setVolume(this.audioId, value);
         }
     }
 
     get loop() {
         var ret = false;
-        if (_audioId !== undefined) {
-            ret = audioEngine.isLoop(_audioId);
+        if (this.audioId !== undefined) {
+            ret = audioEngine.isLoop(this.audioId);
         }
         return ret;
     }
 
     set loop(value) {
-        _inLoop = value;
-        if (_audioId !== undefined) {
-            audioEngine.setLoop(_audioId, value);
+        this.inLoop = value;
+        if (this.audioId !== undefined) {
+            audioEngine.setLoop(this.audioId, value);
         }
     }
 
     get autoplay() {
-        return _inAutoplay;
+        return this.inAutoplay;
     }
 
     set autoplay(value) {
-        _inAutoplay = value;
+        this.inAutoplay = value;
         if (value) {
             this.play();
         }
@@ -232,28 +162,28 @@ class InnerAudioContext {
     // only read attribute
     get duration() {
         var ret = 0;
-        if (_audioId !== undefined) {
-            ret = audioEngine.getDuration(_audioId);
+        if (this.audioId !== undefined) {
+            ret = audioEngine.getDuration(this.audioId);
         }
         return ret;
     }
 
     get currentTime() {
         var ret = 0;
-        if (_audioId !== undefined) {
-            ret = audioEngine.getCurrentTime(_audioId);
+        if (this.audioId !== undefined) {
+            ret = audioEngine.getCurrentTime(this.audioId);
         }
         return ret.toFixed(6);
     }
 
     get paused() {
         var ret = false;
-        if (_audioId !== undefined) {
-            if (audioEngine.getState(_audioId) === _PAUSE) {
+        if (this.audioId !== undefined) {
+            if (audioEngine.getState(this.audioId) === this.PAUSE) {
                 ret = true;
             }
         }
-        if (_isStop) {
+        if (this.isStop) {
             ret = true;
         }
         return ret;
@@ -261,18 +191,18 @@ class InnerAudioContext {
 
     get buffered() {
         var ret = 0;
-        if (_audioId !== undefined) {
+        if (this.audioId !== undefined) {
             if (typeof audioEngine.getBuffered === "function") {
-                ret = audioEngine.getBuffered(_audioId);
+                ret = audioEngine.getBuffered(this.audioId);
             }
         }
         return ret;
     }
 
     set obeyMuteSwitch(value) {
-        if (_audioId !== undefined) {
+        if (this.audioId !== undefined) {
             if (typeof audioEngine.setObeyMuteSwitch === "function") {
-                audioEngine.setObeyMuteSwitch(_audioId, value);
+                audioEngine.setObeyMuteSwitch(this.audioId, value);
             }
         }
     }
@@ -280,9 +210,9 @@ class InnerAudioContext {
     // only read attribute
     get obeyMuteSwitch() {
         var ret = false;
-        if (_audioId !== undefined) {
+        if (this.audioId !== undefined) {
             if (typeof audioEngine.getObeyMuteSwitch === "function") {
-                ret = audioEngine.getObeyMuteSwitch(_audioId);
+                ret = audioEngine.getObeyMuteSwitch(this.audioId);
             }
         }
         return ret;
@@ -295,67 +225,56 @@ class InnerAudioContext {
             return;
         }
 
-        if (this.src.search("http://") !== -1 || this.src.search("https://") !== -1) {
-
-            var fileExist = function () {
-                var playing = _playing.bind(this);
-                playing();
-            }.bind(this);
-
-            var self = this;
-            var fileNotExist = function () {
-                var task = rt.downloadFile({
-                    url: this.src,
-                    filePath: "",
-                    success(msg) {
-                        _filePath = msg["tempFilePath"];
-                        var playing = _playing.bind(self);
-                        playing();
-                    },
-                    fail() {
-                        console.error("InnerAudioContext play: downloadFile fail");
-                        var cbArray = _getFunctionCallbackArray("onError");
-                        if (cbArray !== undefined) {
-                            var res = { errMsg: "downloadFile fail", errCode: 10002 };
-                            _onFunctionCallback(cbArray, res);
-                        }
-                        return;
-                    },
-                    complete() {
-                        _isWaiting = false;
-                    },
-                });
-                task.onProgressUpdate(function (msg) {
-                    if (!_isWaiting) {
-                        _isWaiting = true;
-
-                        var cbArray = _getFunctionCallbackArray("onWaiting");
-                        if (cbArray !== undefined) {
-                            _onFunctionCallback(cbArray);
-                        }
-                    }
-
-                });
-            }.bind(this);
-
-            var fileManager = rt.getFileSystemManager();
-            fileManager.access({
-                path: _filePath,
-                success: fileExist,
-                fail: fileNotExist
-            });
-
+        if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
+            if (this.audioId !== undefined) {
+                audioEngine.resume(this.audioId);
+                this.beginUpdateProgress();
+            } else {
+                console.warn("InnerAudioContext resume: currently is no music");
+            }
         } else {
-            _filePath = this.src;
-            var playing = _playing.bind(this);
-            playing();
+            if (this.audioId === undefined) {
+                var cbArray = _getFunctionCallbackArray("onCanplay");
+                if (cbArray !== undefined) {
+                    _onFunctionCallback(cbArray);
+                }
+
+                this.audioId = audioEngine.play(this.src, this.inLoop, this.inVolume);
+                if (typeof this.startTime === "number" && this.startTime > 0) {
+                    audioEngine.setCurrentTime(this.audioId, this.startTime);
+                }
+                this.isStop = false;
+
+                var cbArray2 = _getFunctionCallbackArray("onPlay");
+                if (cbArray2 !== undefined) {
+                    _onFunctionCallback(cbArray2);
+                }
+
+                this.beginUpdateProgress();
+
+            } else if (this.audioId !== undefined && this.loop === false && audioEngine.getState(this.audioId) !== this.PLAYING) {
+                this.audioId = undefined;
+                this.audioId = audioEngine.play(this.src, this.loop, this.inVolume);
+                if (typeof this.startTime === "number" && this.startTime > 0) {
+                    audioEngine.setCurrentTime(this.audioId, this.startTime);
+                }
+                this.beginUpdateProgress();
+            } else {
+                return;
+            }
+        }
+
+        if (this.audioId !== undefined) {
+            if (this.endCb !== null) {
+                audioEngine.setFinishCallback(this.audioId, this.endCb);
+            }
         }
     }
 
     pause() {
-        if (_audioId !== undefined) {
-            if (audioEngine.getState(_audioId) !== _PAUSE) {
-                audioEngine.pause(_audioId);
+        if (this.audioId !== undefined) {
+            if (audioEngine.getState(this.audioId) !== this.PAUSE) {
+                audioEngine.pause(this.audioId);
             } else {
                 console.warn("InnerAudioContext pause: currently music was pause");
             }
@@ -371,10 +290,10 @@ class InnerAudioContext {
     }
 
     stop() {
-        if (_audioId !== undefined) {
-            audioEngine.stop(_audioId);
-            _audioId = undefined;
-            _isStop = true;
+        if (this.audioId !== undefined) {
+            audioEngine.stop(this.audioId);
+            this.audioId = undefined;
+            this.isStop = true;
         } else {
             console.warn("InnerAudioContext stop: currently is no music");
         }
@@ -386,16 +305,16 @@ class InnerAudioContext {
     }
 
     seek(position) {
-        if (_audioId !== undefined) {
-            _isSeeking = true;
-            _isSeeked = true;
+        if (this.audioId !== undefined) {
+            this.isSeeking = true;
+            this.isSeeked = true;
 
             var cbArray = _getFunctionCallbackArray("onSeeking");
             if (cbArray !== undefined) {
                 _onFunctionCallback(cbArray);
             }
 
-            audioEngine.setCurrentTime(_audioId, position);
+            audioEngine.setCurrentTime(this.audioId, position);
 
             var cbArray2 = _getFunctionCallbackArray("onSeeked");
             if (cbArray2 !== undefined) {
@@ -413,10 +332,10 @@ class InnerAudioContext {
     }
 
     onEnded(callback) {
-        if (_endCb === null) {
-            _endCb = callback;
-            if (_audioId !== undefined) {
-                audioEngine.setFinishCallback(_audioId, _endCb);
+        if (this.endCb === null) {
+            this.endCb = callback;
+            if (this.audioId !== undefined) {
+                audioEngine.setFinishCallback(this.audioId, this.endCb);
             } else {
                 console.warn("InnerAudioContext onEnded: currently is no music");
             }
@@ -424,13 +343,13 @@ class InnerAudioContext {
     }
 
     offEnded(callback) {
-        if (_endCb !== null) {
-            _endCb = null;
+        if (this.endCb !== null) {
+            this.endCb = null;
         }
     }
 
     onPlay(callback) {
-        if (_audioId !== undefined && audioEngine.getState(_audioId) === _PLAYING) {
+        if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PLAYING) {
             callback();
             return;
         }
@@ -442,7 +361,7 @@ class InnerAudioContext {
     }
 
     onPause(callback) {
-        if (_audioId !== undefined && audioEngine.getState(_audioId) === _PAUSE) {
+        if (this.audioId !== undefined && audioEngine.getState(this.audioId) === this.PAUSE) {
             callback();
             return;
         }
@@ -454,7 +373,7 @@ class InnerAudioContext {
     }
 
     onStop(callback) {
-        if (_isStop) {
+        if (this.isStop) {
             callback();
             return;
         }
@@ -474,7 +393,7 @@ class InnerAudioContext {
     }
 
     onCanplay(callback) {
-        if (_audioId !== undefined) {
+        if (this.audioId !== undefined) {
             callback();
             return;
         }
@@ -486,7 +405,7 @@ class InnerAudioContext {
     }
 
     onWaiting(callback) {
-        if (_audioId === undefined && _isWaiting) {
+        if (this.audioId === undefined && this.isWaiting) {
             callback();
             return;
         }
@@ -498,8 +417,8 @@ class InnerAudioContext {
     }
 
     onSeeking(callback) {
-        if (_audioId !== undefined && _isSeeking) {
-            _isSeeking = false;
+        if (this.audioId !== undefined && this.isSeeking) {
+            this.isSeeking = false;
             callback();
             return;
         }
@@ -511,8 +430,8 @@ class InnerAudioContext {
     }
 
     onSeeked(callback) {
-        if (_audioId !== undefined && _isSeeked) {
-            _isSeeked = false;
+        if (this.audioId !== undefined && this.isSeeked) {
+            this.isSeeked = false;
             callback();
             return;
         }
@@ -529,6 +448,33 @@ class InnerAudioContext {
 
     offTimeUpdate(callback) {
         _removeFunctionCallback("onTimeUpdate", callback);
+    }
+
+    //private
+    updateProgress() {
+        setTimeout(() => {
+            // callback
+            var cbArray = _getFunctionCallbackArray("onTimeUpdate");
+            if (cbArray !== undefined && this.audioId !== undefined) {
+                var playing = audioEngine.getState(this.audioId) === this.PLAYING;
+                _onFunctionCallback(cbArray);
+                if (playing === false) {
+                    this.shouldUpdate = false;
+                }
+            }
+            // update
+            if (this.shouldUpdate === true) {
+                this.updateProgress();
+            }
+        }, 500);
+    }
+
+    beginUpdateProgress() {
+        if (this.shouldUpdate === true) {
+            return;
+        }
+        this.shouldUpdate = true;
+        this.updateProgress();
     }
 }
 
