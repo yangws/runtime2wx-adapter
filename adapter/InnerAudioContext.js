@@ -105,11 +105,11 @@ class InnerAudioContext {
         this.src = null;
         this._audioId = undefined;
         this._endCb = null;
+        this._WaitingCb = null;
         this._inLoop = false;
         this._inVolume = 1.0;
         this._inAutoplay = false;
         this._isStop = false;
-        this._isWaiting = false;
         this._isSeeking = false;
         this._isSeeked = false;
         this._PLAYING = 1;
@@ -250,6 +250,12 @@ class InnerAudioContext {
                     _onFunctionCallback(cbArray2);
                 }
 
+                var cbArray3 = _getFunctionCallbackArray("onError");
+                if (cbArray3 !== undefined && audioEngine.getState(this._audioId) === -1) {
+                    var res = { errMsg: "Network error", errCode: 10002 };
+                    _onFunctionCallback(cbArray3, res);
+                }
+
                 this._beginUpdateProgress();
 
             } else if (this._audioId !== undefined && this.loop === false && audioEngine.getState(this._audioId) !== this._PLAYING) {
@@ -261,6 +267,12 @@ class InnerAudioContext {
                 this._beginUpdateProgress();
             } else {
                 return;
+            }
+        }
+
+        if (this._audioId !== undefined) {
+            if (this._WaitingCb !== null) {
+                audioEngine.setWaitingCallback(this._audioId, this._WaitingCb);
             }
         }
 
@@ -405,15 +417,20 @@ class InnerAudioContext {
     }
 
     onWaiting(callback) {
-        if (this._audioId === undefined && this._isWaiting) {
-            callback();
-            return;
+        if (this._WaitingCb === null) {
+            this._WaitingCb = callback;
+            if (this._audioId !== undefined) {
+                audioEngine.setWaitingCallback(this._audioId, this._WaitingCb);
+            } else {
+                console.warn("InnerAudioContext onWaiting: currently is no music");
+            }
         }
-        _pushFunctionCallback("onWaiting", callback);
     }
 
     offWaiting(callback) {
-        _removeFunctionCallback("onWaiting", callback);
+        if (this._WaitingCb !== null) {
+            this._WaitingCb = null;
+        }
     }
 
     onSeeking(callback) {
