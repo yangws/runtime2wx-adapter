@@ -109,7 +109,8 @@ var InnerAudioContext = function () {
         audioEngine = rt.AudioEngine;
 
         this.startTime = 0;
-        this.src = null;
+        this._src = new WeakMap();
+        this._src.set(this, '');
         this._audioId = undefined;
         this._endCb = null;
         this._WaitingCb = null;
@@ -133,7 +134,7 @@ var InnerAudioContext = function () {
 
         // function
         value: function play() {
-            if (this.src === null) {
+            if (this._src.get(this) === "") {
                 console.error("InnerAudioContext play: please define src before play");
                 return;
             }
@@ -147,12 +148,12 @@ var InnerAudioContext = function () {
                 }
             } else {
                 if (this._audioId === undefined) {
-                    var cbArray = _getFunctionCallbackArray("onCanplay");
-                    if (cbArray !== undefined) {
-                        _onFunctionCallback(cbArray);
-                    }
+                    // var cbArray = _getFunctionCallbackArray("onCanplay");
+                    // if (cbArray !== undefined) {
+                    //     _onFunctionCallback(cbArray);
+                    // }
 
-                    this._audioId = audioEngine.play(this.src, this._inLoop, this._inVolume);
+                    this._audioId = audioEngine.play(this._src.get(this), this._inLoop, this._inVolume);
                     if (typeof this.startTime === "number" && this.startTime > 0) {
                         audioEngine.setCurrentTime(this._audioId, this.startTime);
                     }
@@ -172,7 +173,7 @@ var InnerAudioContext = function () {
                     this._beginUpdateProgress();
                 } else if (this._audioId !== undefined && this.loop === false && audioEngine.getState(this._audioId) !== this._PLAYING) {
                     this._audioId = undefined;
-                    this._audioId = audioEngine.play(this.src, this.loop, this._inVolume);
+                    this._audioId = audioEngine.play(this._src.get(this), this.loop, this._inVolume);
                     if (typeof this.startTime === "number" && this.startTime > 0) {
                         audioEngine.setCurrentTime(this._audioId, this.startTime);
                     }
@@ -434,6 +435,25 @@ var InnerAudioContext = function () {
             this._updateProgress();
         }
     }, {
+        key: "src",
+        get: function get() {
+            return this._src.get(this);
+        },
+        set: function set(value) {
+            if (typeof value !== 'string') {
+                console.error("InnerAudioContext src: please src define string type");
+                return;
+            }
+            this._src.set(this, value);
+            if (this._inAutoplay) {
+                this.play();
+            }
+            var cbArray = _getFunctionCallbackArray("onCanplay");
+            if (cbArray !== undefined) {
+                _onFunctionCallback(cbArray);
+            }
+        }
+    }, {
         key: "volume",
         get: function get() {
             var ret = 1.0;
@@ -470,9 +490,6 @@ var InnerAudioContext = function () {
         },
         set: function set(value) {
             this._inAutoplay = value;
-            if (value) {
-                this.play();
-            }
         }
 
         // only read attribute
