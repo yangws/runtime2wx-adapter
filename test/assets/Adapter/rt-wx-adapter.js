@@ -147,8 +147,13 @@ var InnerAudioContext = function () {
                 }
             } else {
                 if (this._audioId === undefined) {
-
                     this._audioId = audioEngine.play(this._src, this._inLoop, this._inVolume);
+                    var cbArrayError = _getFunctionCallbackArray("onError");
+                    if (cbArrayError !== undefined && this._audioId === -1) {
+                        var res = { errMsg: "System error: create audio error or audio instance is out of limit", errCode: 10001 };
+                        _onFunctionCallback(cbArrayError, res);
+                        return;
+                    }
                     if (typeof this.startTime === "number" && this.startTime > 0) {
                         audioEngine.setCurrentTime(this._audioId, this.startTime);
                     }
@@ -159,10 +164,9 @@ var InnerAudioContext = function () {
                         _onFunctionCallback(cbArray2);
                     }
 
-                    var cbArray3 = _getFunctionCallbackArray("onError");
-                    if (cbArray3 !== undefined && audioEngine.getState(this._audioId) === -1) {
+                    if (cbArrayError !== undefined && audioEngine.getState(this._audioId) === -1) {
                         var res = { errMsg: "Network error", errCode: 10002 };
-                        _onFunctionCallback(cbArray3, res);
+                        _onFunctionCallback(cbArrayError, res);
                     }
 
                     this._beginUpdateProgress();
