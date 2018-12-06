@@ -2,7 +2,6 @@ var audioEngine;
 var rt = loadRuntime();
 var _cbFunctionArrayMap = {};
 var _map = new WeakMap();
-var _this = new WeakMap();
 
 // callback function tool
 var _pushFunctionCallback = function (name, cb) {
@@ -102,7 +101,7 @@ class InnerAudioContext {
 
     constructor() {
         audioEngine = rt.AudioEngine;
-        _this = this;
+        var that = this;
 
         _map.set(this, {
             startTime: 0,
@@ -123,26 +122,26 @@ class InnerAudioContext {
                 setTimeout(() => {
                     // callback)
                     var cbArray = _getFunctionCallbackArray("onTimeUpdate");
-                    if (cbArray !== undefined && _map.get(_this)['_audioId'] !== undefined) {
-                        var playing = audioEngine.getState(_map.get(_this)['_audioId']) === _map.get(_this)['_PLAYING'];
+                    if (cbArray !== undefined && _map.get(that)['_audioId'] !== undefined) {
+                        var playing = audioEngine.getState(_map.get(that)['_audioId']) === _map.get(that)['_PLAYING'];
                         _onFunctionCallback(cbArray);
                         if (playing === false) {
-                            _map.get(_this)['_shouldUpdate'] = false;
+                            _map.get(that)['_shouldUpdate'] = false;
                         }
                     }
                     // update
-                    if (_map.get(_this)['_shouldUpdate'] === true) {
-                        _map.get(_this)['_updateProgress']();
+                    if (_map.get(that)['_shouldUpdate'] === true) {
+                        _map.get(that)['_updateProgress']();
                     }
                 }, 500);
             },
 
             _beginUpdateProgress: function () {
-                if (_map.get(_this)['_shouldUpdate'] === true) {
+                if (_map.get(that)['_shouldUpdate'] === true) {
                     return;
                 }
-                _map.get(_this)['_shouldUpdate'] = true;
-                _map.get(_this)['_updateProgress']();
+                _map.get(that)['_shouldUpdate'] = true;
+                _map.get(that)['_updateProgress']();
             }
         });
     }
