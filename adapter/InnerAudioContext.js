@@ -115,6 +115,7 @@ class InnerAudioContext {
             _isStop: false,
             _isSeeking: false,
             _isSeeked: false,
+            _preloadFail: false,
             _PLAYING: 1,
             _PAUSE: 2,
             _shouldUpdate: false,
@@ -157,13 +158,26 @@ class InnerAudioContext {
             return;
         }
         _map.get(this)['_src'] = value;
+        var _this = this;
+        // preload
+        audioEngine.preload(value, function (loaded) {
+            if (loaded === true) {
+                var cbArray = _getFunctionCallbackArray("onCanplay");
+                if (cbArray !== undefined) {
+                    _onFunctionCallback(cbArray);
+                }
+            } else {
+                _map.get(_this)['_preloadFail'] = true;
+            }
+        });
+        // waiting
+        var cbArrayWaiting = _map.get(this)['_WaitingCb']
+        if (cbArrayWaiting !== undefined) {
+            cbArrayWaiting();
+        }
         if (_map.get(this)['_inAutoplay']) {
             this.play();
             return;
-        }
-        var cbArray = _getFunctionCallbackArray("onCanplay");
-        if (cbArray !== undefined) {
-            _onFunctionCallback(cbArray);
         }
     }
 
@@ -280,6 +294,15 @@ class InnerAudioContext {
             }
         } else {
             if (_map.get(this)['_audioId'] === undefined) {
+                if (_map.get(this)['_preloadFail'] === true) {
+                    // if call uncache, preload again
+                    audioEngine.preload(_map.get(this)['_src'], function () {
+                        var cbArray = _getFunctionCallbackArray("onCanplay");
+                        if (cbArray !== undefined) {
+                            _onFunctionCallback(cbArray);
+                        }
+                    });
+                }
                 _map.get(this)['_audioId'] = audioEngine.play(_map.get(this)['_src'], _map.get(this)['_inLoop'], _map.get(this)['_inVolume']);
                 var cbArrayError = _getFunctionCallbackArray("onError");
                 if (cbArrayError !== undefined && _map.get(this)['_audioId'] === -1) {
@@ -451,10 +474,6 @@ class InnerAudioContext {
     }
 
     onCanplay(callback) {
-        if (_map.get(this)['_audioId'] !== undefined) {
-            callback();
-            return;
-        }
         _pushFunctionCallback("onCanplay", callback);
     }
 
