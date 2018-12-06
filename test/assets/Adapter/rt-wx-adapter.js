@@ -123,7 +123,34 @@ var InnerAudioContext = function () {
             _isSeeked: false,
             _PLAYING: 1,
             _PAUSE: 2,
-            _shouldUpdate: false
+            _shouldUpdate: false,
+            _updateProgress: function _updateProgress() {
+                var _this = this;
+
+                setTimeout(function () {
+                    // callback
+                    var cbArray = _getFunctionCallbackArray("onTimeUpdate");
+                    if (cbArray !== undefined && _map.get(_this)['_audioId'] !== undefined) {
+                        var playing = audioEngine.getState(_map.get(_this)['_audioId']) === _map.get(_this)['_PLAYING'];
+                        _onFunctionCallback(cbArray);
+                        if (playing === false) {
+                            _map.get(_this)['_shouldUpdate'] = false;
+                        }
+                    }
+                    // update
+                    if (_map.get(_this)['_shouldUpdate'] === true) {
+                        _map.get(_this)['_updateProgress']();
+                    }
+                }, 500);
+            },
+
+            _beginUpdateProgress: function _beginUpdateProgress() {
+                if (_map.get(this)['_shouldUpdate'] === true) {
+                    return;
+                }
+                _map.get(this)['_shouldUpdate'] = true;
+                _map.get(this)['_updateProgress']();
+            }
         });
     }
 
@@ -144,7 +171,7 @@ var InnerAudioContext = function () {
             if (_map.get(this)['_audioId'] !== undefined && audioEngine.getState(_map.get(this)['_audioId']) === _map.get(this)['_PAUSE']) {
                 if (_map.get(this)['_audioId'] !== undefined) {
                     audioEngine.resume(_map.get(this)['_audioId']);
-                    this._beginUpdateProgress();
+                    _map.get(this)['_beginUpdateProgress']();
                 } else {
                     console.warn("InnerAudioContext resume: currently is no music");
                 }
@@ -172,14 +199,14 @@ var InnerAudioContext = function () {
                         _onFunctionCallback(cbArrayError, res);
                     }
 
-                    this._beginUpdateProgress();
+                    _map.get(this)['_beginUpdateProgress']();
                 } else if (_map.get(this)['_audioId'] !== undefined && this.loop === false && audioEngine.getState(_map.get(this)['_audioId']) !== _map.get(this)['_PLAYING']) {
                     _map.get(this)['_audioId'] = undefined;
                     _map.get(this)['_audioId'] = audioEngine.play(_map.get(this)['_src'], this.loop, _map.get(this)['_inVolume']);
                     if (typeof _map.get(this)['startTime'] === "number" && _map.get(this)['startTime'] > 0) {
                         audioEngine.setCurrentTime(_map.get(this)['_audioId'], _map.get(this)['startTime']);
                     }
-                    this._beginUpdateProgress();
+                    _map.get(this)['_beginUpdateProgress']();
                 } else {
                     return;
                 }
@@ -402,39 +429,6 @@ var InnerAudioContext = function () {
         key: "offTimeUpdate",
         value: function offTimeUpdate(callback) {
             _removeFunctionCallback("onTimeUpdate", callback);
-        }
-
-        //private
-
-    }, {
-        key: "_updateProgress",
-        value: function _updateProgress() {
-            var _this = this;
-
-            setTimeout(function () {
-                // callback
-                var cbArray = _getFunctionCallbackArray("onTimeUpdate");
-                if (cbArray !== undefined && _map.get(_this)['_audioId'] !== undefined) {
-                    var playing = audioEngine.getState(_map.get(_this)['_audioId']) === _map.get(_this)['_PLAYING'];
-                    _onFunctionCallback(cbArray);
-                    if (playing === false) {
-                        _map.get(_this)['_shouldUpdate'] = false;
-                    }
-                }
-                // update
-                if (_map.get(_this)['_shouldUpdate'] === true) {
-                    _this._updateProgress();
-                }
-            }, 500);
-        }
-    }, {
-        key: "_beginUpdateProgress",
-        value: function _beginUpdateProgress() {
-            if (_map.get(this)['_shouldUpdate'] === true) {
-                return;
-            }
-            _map.get(this)['_shouldUpdate'] = true;
-            this._updateProgress();
         }
     }, {
         key: "src",
