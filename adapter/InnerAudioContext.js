@@ -109,6 +109,7 @@ class InnerAudioContext {
             _audioId: undefined,
             _endCb: null,
             _WaitingCb: null,
+            _errorCb: null,
             _inLoop: false,
             _inVolume: 1.0,
             _inAutoplay: false,
@@ -157,13 +158,44 @@ class InnerAudioContext {
             return;
         }
         _map.get(this)['_src'] = value;
+        var _this = this;
+        // error
+        _map.get(this)['_ErrorCb'] = function (param) {
+            var cbArrayError = _getFunctionCallbackArray("onError");
+            if (cbArrayError !== undefined) {
+                var res = { errMsg: param.errMsg, errCode: param.errCode };
+                _onFunctionCallback(cbArrayError, res);
+                return;
+            }
+        }
+        // preload
+        audioEngine.preload(value, function (loaded, errObj) {
+            if (loaded === false) {
+                var errCb = _map.get(_this)['_ErrorCb'];
+                var retObj = {
+                    errCode: 10001,
+                    errMsg: "system error: play audio error"
+                };
+                if (errObj !== undefined) {
+                    retObj.errCode = errObj.errCode;
+                    retObj.errMsg = errObj.errMsg;
+                }
+                errCb(retObj)
+            } else {
+                var cbArray = _getFunctionCallbackArray("onCanplay");
+                if (cbArray !== undefined) {
+                    _onFunctionCallback(cbArray);
+                }
+            }
+        });
+        // waiting
+        var cbArrayWaiting = _map.get(this)['_WaitingCb']
+        if (cbArrayWaiting !== null) {
+            cbArrayWaiting();
+        }
         if (_map.get(this)['_inAutoplay']) {
             this.play();
             return;
-        }
-        var cbArray = _getFunctionCallbackArray("onCanplay");
-        if (cbArray !== undefined) {
-            _onFunctionCallback(cbArray);
         }
     }
 
@@ -327,6 +359,10 @@ class InnerAudioContext {
                 audioEngine.setFinishCallback(_map.get(this)['_audioId'], _map.get(this)['_endCb']);
             }
         }
+
+        if (_map.get(this)['_audioId'] !== undefined && typeof audioEngine.setErrorCallback === 'function') {
+            audioEngine.setErrorCallback(_map.get(this)['_audioId'], _map.get(this)['_ErrorCb']);
+        }
     }
 
     pause() {
@@ -451,10 +487,6 @@ class InnerAudioContext {
     }
 
     onCanplay(callback) {
-        if (_map.get(this)['_audioId'] !== undefined) {
-            callback();
-            return;
-        }
         _pushFunctionCallback("onCanplay", callback);
     }
 
