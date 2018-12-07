@@ -160,6 +160,24 @@ module.exports = cc.Class({
         this.audioItem.setEvent("从10秒开始播放音乐，仅对还没播放过音乐生效。");
     },
 
+    onClickButtonPlayError() {
+        //this.audioId = rt.AudioEngine.play(this.audioClip.nativeUrl, this.isLoop, this.volume);
+
+        //innerAudioContext.src = this.audioClip.nativeUrl;
+        innerAudioContext.src = "http://47.98.62.68/cocos-runtime-demo/media/NoExistFile.mp3";
+        innerAudioContext.loop = true;
+        innerAudioContext.volume = this.volume;
+        innerAudioContext.startTime = 0;
+        innerAudioContext.play();
+
+        // innerAudioContext2.src = this.audioClip2.nativeUrl;
+        // innerAudioContext2.loop = true;
+        // innerAudioContext2.volume = this.volume;
+        // innerAudioContext2.play();
+
+        this.audioItem.setEvent("请监听错误");
+    },
+
     onClickButtonStop() {
         // if (this.audioId !== undefined) {
         //     rt.AudioEngine.stop(this.audioId);
@@ -220,6 +238,7 @@ module.exports = cc.Class({
         if (this.onErrorCallback === undefined) {
             this.onErrorCallback = function (res) {
                 this.audioItem.setMonitorEvent("errMsg: " + res.errMsg + ", errCode: " + res.errCode);
+                innerAudioContext.stop();
             }.bind(this);
         }
 

@@ -109,13 +109,13 @@ class InnerAudioContext {
             _audioId: undefined,
             _endCb: null,
             _WaitingCb: null,
+            _errorCb: null,
             _inLoop: false,
             _inVolume: 1.0,
             _inAutoplay: false,
             _isStop: false,
             _isSeeking: false,
             _isSeeked: false,
-            _preloadFail: false,
             _PLAYING: 1,
             _PAUSE: 2,
             _shouldUpdate: false,
@@ -159,20 +159,38 @@ class InnerAudioContext {
         }
         _map.get(this)['_src'] = value;
         var _this = this;
+        // error
+        _map.get(this)['_ErrorCb'] = function (param) {
+            var cbArrayError = _getFunctionCallbackArray("onError");
+            if (cbArrayError !== undefined) {
+                var res = { errMsg: param.errMsg, errCode: param.errCode };
+                _onFunctionCallback(cbArrayError, res);
+                return;
+            }
+        }
         // preload
-        audioEngine.preload(value, function (loaded) {
-            if (loaded === true) {
+        audioEngine.preload(value, function (loaded, errObj) {
+            if (loaded === false) {
+                var errCb = _map.get(_this)['_ErrorCb'];
+                var retObj = {
+                    errCode: 10001,
+                    errMsg: "system error: play audio error"
+                };
+                if (errObj !== undefined) {
+                    retObj.errCode = errObj.errCode;
+                    retObj.errMsg = errObj.errMsg;
+                }
+                errCb(retObj)
+            } else {
                 var cbArray = _getFunctionCallbackArray("onCanplay");
                 if (cbArray !== undefined) {
                     _onFunctionCallback(cbArray);
                 }
-            } else {
-                _map.get(_this)['_preloadFail'] = true;
             }
         });
         // waiting
         var cbArrayWaiting = _map.get(this)['_WaitingCb']
-        if (cbArrayWaiting !== undefined) {
+        if (cbArrayWaiting !== null) {
             cbArrayWaiting();
         }
         if (_map.get(this)['_inAutoplay']) {
@@ -294,15 +312,6 @@ class InnerAudioContext {
             }
         } else {
             if (_map.get(this)['_audioId'] === undefined) {
-                if (_map.get(this)['_preloadFail'] === true) {
-                    // if call uncache, preload again
-                    audioEngine.preload(_map.get(this)['_src'], function () {
-                        var cbArray = _getFunctionCallbackArray("onCanplay");
-                        if (cbArray !== undefined) {
-                            _onFunctionCallback(cbArray);
-                        }
-                    });
-                }
                 _map.get(this)['_audioId'] = audioEngine.play(_map.get(this)['_src'], _map.get(this)['_inLoop'], _map.get(this)['_inVolume']);
                 var cbArrayError = _getFunctionCallbackArray("onError");
                 if (cbArrayError !== undefined && _map.get(this)['_audioId'] === -1) {
@@ -349,6 +358,10 @@ class InnerAudioContext {
             if (_map.get(this)['_endCb'] !== null) {
                 audioEngine.setFinishCallback(_map.get(this)['_audioId'], _map.get(this)['_endCb']);
             }
+        }
+
+        if (_map.get(this)['_audioId'] !== undefined && typeof audioEngine.setErrorCallback === 'function') {
+            audioEngine.setErrorCallback(_map.get(this)['_audioId'], _map.get(this)['_ErrorCb']);
         }
     }
 
