@@ -139,7 +139,7 @@ module.exports = cc.Class({
         innerAudioContext.volume = this.volume;
         innerAudioContext.startTime = 10;
         innerAudioContext.play();
-        this.audioItem.setEvent("从10秒开始播放音乐，仅对还没播放过音乐生效。");
+        this.audioItem.setEvent("从10秒开始播放音乐。");
     },
 
     onClickButtonPlayError() {

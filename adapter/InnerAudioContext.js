@@ -157,6 +157,11 @@ class InnerAudioContext {
             console.error("InnerAudioContext src: please src define string type");
             return;
         }
+        // clear audioId, create new instance
+        if (_map.get(this)['_audioId'] !== undefined) {
+            audioEngine.stop(_map.get(this)['_audioId']);
+            _map.get(this)['_audioId'] = undefined;
+        }
         _map.get(this)['_src'] = value;
         var _this = this;
         // error
@@ -294,6 +299,14 @@ class InnerAudioContext {
             }
         }
         return ret;
+    }
+
+    get startTime() {
+        return _map.get(this)['startTime'];
+    }
+
+    set startTime(value) {
+        _map.get(this)['startTime'] = value;
     }
 
     // function
