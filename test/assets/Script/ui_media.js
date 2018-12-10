@@ -1,7 +1,7 @@
 var res = require("resource");
 var uiUtil = require("ui_util");
 var ui = require("ui");
-var innerAudioContext = loadRuntime().createInnerAudioContext();
+var innerAudioContext;
 // var innerAudioContext2 = loadRuntime().createInnerAudioContext();
 
 // var createInnerAudioContext = require("InnerAudioContext");
@@ -34,6 +34,7 @@ module.exports = cc.Class({
 
     onLoad() {
         this._super();
+        innerAudioContext = loadRuntime().createInnerAudioContext()
         this.node_volume_template.active = false;
 
         this.listenTimeUpdate = false;
@@ -139,7 +140,7 @@ module.exports = cc.Class({
         innerAudioContext.volume = this.volume;
         innerAudioContext.startTime = 10;
         innerAudioContext.play();
-        this.audioItem.setEvent("从10秒开始播放音乐，仅对还没播放过音乐生效。");
+        this.audioItem.setEvent("从10秒开始播放音乐。");
     },
 
     onClickButtonPlayError() {

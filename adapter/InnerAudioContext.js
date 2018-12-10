@@ -1,101 +1,6 @@
 var audioEngine;
 var rt = loadRuntime();
-var _cbFunctionArrayMap = {};
 var _map = new WeakMap();
-
-// callback function tool
-var _pushFunctionCallback = function (name, cb) {
-    if (typeof name !== "string" || typeof cb !== "function") {
-        return;
-    }
-    var arr = _cbFunctionArrayMap[name];
-    if (!Array.isArray(arr)) {
-        arr = [];
-        _cbFunctionArrayMap[name] = arr;
-    }
-    for (var i = 0; i < arr.length; ++i) {
-        if (arr[i] === cb) {
-            return;
-        }
-    }
-    arr.push(cb);
-}
-
-var _removeFunctionCallback = function (name, cb) {
-    var arr = _cbFunctionArrayMap[name];
-    if (arr === undefined) {
-        return;
-    }
-    for (var i = 0; i < arr.length; i++) {
-        if (arr[i] === cb) {
-            arr.splice(i, 1);
-            break;
-        }
-    }
-}
-
-var _getFunctionCallbackArray = function (name) {
-    var arr = _cbFunctionArrayMap[name];
-    if (arr === undefined) {
-        return undefined;
-    }
-    return arr;
-}
-
-var _onFunctionCallback = function (cbFunctionArray) {
-    if (cbFunctionArray === undefined) {
-        return;
-    }
-    var argc = arguments.length;
-    var args = arguments;
-    var errArr = [];
-
-    cbFunctionArray.forEach(function (cb) {
-        if (typeof cb !== "function") {
-            return;
-        }
-        try {
-            switch (argc) {
-                case 1:
-                    cb();
-                    break;
-                case 2:
-                    cb(args[1]);
-                    break;
-                case 3:
-                    cb(args[1], args[2]);
-                    break;
-                case 4:
-                    cb(args[1], args[2], args[3]);
-                    break;
-                case 5:
-                    cb(args[1], args[3], args[3], args[4]);
-                    break;
-                case 6:
-                    cb(args[1], args[3], args[3], args[4], args[5]);
-                    break;
-                case 7:
-                    cb(args[1], args[3], args[3], args[4], args[5], args[6]);
-                    break;
-                case 8:
-                    cb(args[1], args[3], args[3], args[4], args[5], args[6], args[7]);
-                    break;
-                case 9:
-                    cb(args[1], args[3], args[3], args[4], args[5], args[6], args[7], args[8]);
-                    break;
-                case 10:
-                    cb(args[1], args[3], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
-                    break;
-            }
-        }
-        catch (err) {
-            errArr.push(err);
-        }
-    });
-    if (errArr.length > 0) {
-        throw (errArr.join("\n"));
-    }
-}
 
 class InnerAudioContext {
 
@@ -122,10 +27,10 @@ class InnerAudioContext {
             _updateProgress: function () {
                 setTimeout(() => {
                     // callback)
-                    var cbArray = _getFunctionCallbackArray("onTimeUpdate");
+                    var cbArray = _map.get(that)["_getFunctionCallbackArray"]("onTimeUpdate");
                     if (cbArray !== undefined && _map.get(that)['_audioId'] !== undefined) {
                         var playing = audioEngine.getState(_map.get(that)['_audioId']) === _map.get(that)['_PLAYING'];
-                        _onFunctionCallback(cbArray);
+                        _map.get(that)["_onFunctionCallback"](cbArray);
                         if (playing === false) {
                             _map.get(that)['_shouldUpdate'] = false;
                         }
@@ -143,6 +48,96 @@ class InnerAudioContext {
                 }
                 _map.get(that)['_shouldUpdate'] = true;
                 _map.get(that)['_updateProgress']();
+            },
+            _cbFunctionArrayMap: {},
+            _pushFunctionCallback: function (name, cb) {
+                if (typeof name !== "string" || typeof cb !== "function") {
+                    return;
+                }
+                var arr = _map.get(that)["_cbFunctionArrayMap"][name];
+                if (!Array.isArray(arr)) {
+                    arr = [];
+                    _map.get(that)["_cbFunctionArrayMap"][name] = arr;
+                }
+                for (var i = 0; i < arr.length; ++i) {
+                    if (arr[i] === cb) {
+                        return;
+                    }
+                }
+                arr.push(cb);
+            },
+            _removeFunctionCallback: function (name, cb) {
+                var arr = _map.get(that)["_cbFunctionArrayMap"][name];
+                if (arr === undefined) {
+                    return;
+                }
+                for (var i = 0; i < arr.length; i++) {
+                    if (arr[i] === cb) {
+                        arr.splice(i, 1);
+                        break;
+                    }
+                }
+            },
+            _getFunctionCallbackArray: function (name) {
+                var arr = _map.get(that)["_cbFunctionArrayMap"][name];
+                if (arr === undefined) {
+                    return undefined;
+                }
+                return arr;
+            },
+            _onFunctionCallback: function (cbFunctionArray) {
+                if (cbFunctionArray === undefined) {
+                    return;
+                }
+                var argc = arguments.length;
+                var args = arguments;
+                var errArr = [];
+
+                cbFunctionArray.forEach(function (cb) {
+                    if (typeof cb !== "function") {
+                        return;
+                    }
+                    try {
+                        switch (argc) {
+                            case 1:
+                                cb();
+                                break;
+                            case 2:
+                                cb(args[1]);
+                                break;
+                            case 3:
+                                cb(args[1], args[2]);
+                                break;
+                            case 4:
+                                cb(args[1], args[2], args[3]);
+                                break;
+                            case 5:
+                                cb(args[1], args[3], args[3], args[4]);
+                                break;
+                            case 6:
+                                cb(args[1], args[3], args[3], args[4], args[5]);
+                                break;
+                            case 7:
+                                cb(args[1], args[3], args[3], args[4], args[5], args[6]);
+                                break;
+                            case 8:
+                                cb(args[1], args[3], args[3], args[4], args[5], args[6], args[7]);
+                                break;
+                            case 9:
+                                cb(args[1], args[3], args[3], args[4], args[5], args[6], args[7], args[8]);
+                                break;
+                            case 10:
+                                cb(args[1], args[3], args[3], args[4], args[5], args[6], args[7], args[8], args[9]);
+                                break;
+                        }
+                    }
+                    catch (err) {
+                        errArr.push(err);
+                    }
+                });
+                if (errArr.length > 0) {
+                    throw (errArr.join("\n"));
+                }
             }
         });
     }
@@ -157,14 +152,19 @@ class InnerAudioContext {
             console.error("InnerAudioContext src: please src define string type");
             return;
         }
+        // clear audioId, create new instance
+        if (_map.get(this)['_audioId'] !== undefined) {
+            audioEngine.stop(_map.get(this)['_audioId']);
+            _map.get(this)['_audioId'] = undefined;
+        }
         _map.get(this)['_src'] = value;
         var _this = this;
         // error
         _map.get(this)['_ErrorCb'] = function (param) {
-            var cbArrayError = _getFunctionCallbackArray("onError");
+            var cbArrayError = _map.get(_this)["_getFunctionCallbackArray"]("onError");
             if (cbArrayError !== undefined) {
                 var res = { errMsg: param.errMsg, errCode: param.errCode };
-                _onFunctionCallback(cbArrayError, res);
+                _map.get(_this)["_onFunctionCallback"](cbArrayError, res);
                 return;
             }
         }
@@ -182,9 +182,9 @@ class InnerAudioContext {
                 }
                 errCb(retObj)
             } else {
-                var cbArray = _getFunctionCallbackArray("onCanplay");
+                var cbArray = _map.get(_this)["_getFunctionCallbackArray"]("onCanplay");
                 if (cbArray !== undefined) {
-                    _onFunctionCallback(cbArray);
+                    _map.get(_this)["_onFunctionCallback"](cbArray);
                 }
             }
         });
@@ -296,6 +296,14 @@ class InnerAudioContext {
         return ret;
     }
 
+    get startTime() {
+        return _map.get(this)['startTime'];
+    }
+
+    set startTime(value) {
+        _map.get(this)['startTime'] = value;
+    }
+
     // function
     play() {
         if (_map.get(this)['_src'] === "") {
@@ -313,10 +321,10 @@ class InnerAudioContext {
         } else {
             if (_map.get(this)['_audioId'] === undefined) {
                 _map.get(this)['_audioId'] = audioEngine.play(_map.get(this)['_src'], _map.get(this)['_inLoop'], _map.get(this)['_inVolume']);
-                var cbArrayError = _getFunctionCallbackArray("onError");
+                var cbArrayError = _map.get(this)["_getFunctionCallbackArray"]("onError");
                 if (cbArrayError !== undefined && _map.get(this)['_audioId'] === -1) {
                     var res = { errMsg: "System error: create audio error or audio instance is out of limit", errCode: 10001 };
-                    _onFunctionCallback(cbArrayError, res);
+                    _map.get(this)["_onFunctionCallback"](cbArrayError, res);
                     return;
                 }
                 if (typeof _map.get(this)['startTime'] === "number" && _map.get(this)['startTime'] > 0) {
@@ -324,14 +332,14 @@ class InnerAudioContext {
                 }
                 _map.get(this)['_isStop'] = false;
 
-                var cbArray2 = _getFunctionCallbackArray("onPlay");
+                var cbArray2 = _map.get(this)["_getFunctionCallbackArray"]("onPlay");
                 if (cbArray2 !== undefined) {
-                    _onFunctionCallback(cbArray2);
+                    _map.get(this)["_onFunctionCallback"](cbArray2);
                 }
 
                 if (cbArrayError !== undefined && audioEngine.getState(_map.get(this)['_audioId']) === -1) {
                     var res = { errMsg: "Network error", errCode: 10002 };
-                    _onFunctionCallback(cbArrayError, res);
+                    _map.get(this)["_onFunctionCallback"](cbArrayError, res);
                 }
 
                 _map.get(this)['_beginUpdateProgress']();
@@ -377,9 +385,9 @@ class InnerAudioContext {
             console.warn("InnerAudioContext pause: currently is no music");
         }
 
-        var cbArray = _getFunctionCallbackArray("onPause");
+        var cbArray = _map.get(this)["_getFunctionCallbackArray"]("onPause");
         if (cbArray !== undefined) {
-            _onFunctionCallback(cbArray);
+            _map.get(this)["_onFunctionCallback"](cbArray);
         }
     }
 
@@ -392,9 +400,9 @@ class InnerAudioContext {
             console.warn("InnerAudioContext stop: currently is no music");
         }
 
-        var cbArray = _getFunctionCallbackArray("onStop");
+        var cbArray = _map.get(this)["_getFunctionCallbackArray"]("onStop");
         if (cbArray !== undefined) {
-            _onFunctionCallback(cbArray);
+            _map.get(this)["_onFunctionCallback"](cbArray);
         }
     }
 
@@ -403,16 +411,16 @@ class InnerAudioContext {
             _map.get(this)['_isSeeking'] = true;
             _map.get(this)['_isSeeked'] = true;
 
-            var cbArray = _getFunctionCallbackArray("onSeeking");
+            var cbArray = _map.get(this)["_getFunctionCallbackArray"]("onSeeking");
             if (cbArray !== undefined) {
-                _onFunctionCallback(cbArray);
+                _map.get(this)["_onFunctionCallback"](cbArray);
             }
 
             audioEngine.setCurrentTime(_map.get(this)['_audioId'], position);
 
-            var cbArray2 = _getFunctionCallbackArray("onSeeked");
+            var cbArray2 = _map.get(this)["_getFunctionCallbackArray"]("onSeeked");
             if (cbArray2 !== undefined) {
-                _onFunctionCallback(cbArray2);
+                _map.get(this)["_onFunctionCallback"](cbArray2);
             }
 
         } else {
@@ -422,7 +430,7 @@ class InnerAudioContext {
 
     destroy() {
         audioEngine.end();
-        _cbFunctionArrayMap = {};
+        _map.get(this)["_cbFunctionArrayMap"] = {};
     }
 
     onEnded(callback) {
@@ -447,11 +455,11 @@ class InnerAudioContext {
             callback();
             return;
         }
-        _pushFunctionCallback("onPlay", callback);
+        _map.get(this)["_pushFunctionCallback"]("onPlay", callback);
     }
 
     offPlay(callback) {
-        _removeFunctionCallback("onPlay", callback);
+        _map.get(this)["_removeFunctionCallback"]("onPlay", callback);
     }
 
     onPause(callback) {
@@ -459,11 +467,11 @@ class InnerAudioContext {
             callback();
             return;
         }
-        _pushFunctionCallback("onPause", callback);
+        _map.get(this)["_pushFunctionCallback"]("onPause", callback);
     }
 
     offPause(callback) {
-        _removeFunctionCallback("onPause", callback);
+        _map.get(this)["_removeFunctionCallback"]("onPause", callback);
     }
 
     onStop(callback) {
@@ -471,27 +479,27 @@ class InnerAudioContext {
             callback();
             return;
         }
-        _pushFunctionCallback("onStop", callback);
+        _map.get(this)["_pushFunctionCallback"]("onStop", callback);
     }
 
     offStop(callback) {
-        _removeFunctionCallback("onStop", callback);
+        _map.get(this)["_removeFunctionCallback"]("onStop", callback);
     }
 
     onError(callback) {
-        _pushFunctionCallback("onError", callback);
+        _map.get(this)["_pushFunctionCallback"]("onError", callback);
     }
 
     offError(callback) {
-        _removeFunctionCallback("onError", callback);
+        _map.get(this)["_removeFunctionCallback"]("onError", callback);
     }
 
     onCanplay(callback) {
-        _pushFunctionCallback("onCanplay", callback);
+        _map.get(this)["_pushFunctionCallback"]("onCanplay", callback);
     }
 
     offCanplay(callback) {
-        _removeFunctionCallback("onCanplay", callback);
+        _map.get(this)["_removeFunctionCallback"]("onCanplay", callback);
     }
 
     onWaiting(callback) {
@@ -517,11 +525,11 @@ class InnerAudioContext {
             callback();
             return;
         }
-        _pushFunctionCallback("onSeeking", callback);
+        _map.get(this)["_pushFunctionCallback"]("onSeeking", callback);
     }
 
     offSeeking(callback) {
-        _removeFunctionCallback("onSeeking", callback);
+        _map.get(this)["_removeFunctionCallback"]("onSeeking", callback);
     }
 
     onSeeked(callback) {
@@ -530,19 +538,19 @@ class InnerAudioContext {
             callback();
             return;
         }
-        _pushFunctionCallback("onSeeked", callback);
+        _map.get(this)["_pushFunctionCallback"]("onSeeked", callback);
     }
 
     offSeeked(callback) {
-        _removeFunctionCallback("onSeeked", callback);
+        _map.get(this)["_removeFunctionCallback"]("onSeeked", callback);
     }
 
     onTimeUpdate(callback) {
-        _pushFunctionCallback("onTimeUpdate", callback);
+        _map.get(this)["_pushFunctionCallback"]("onTimeUpdate", callback);
     }
 
     offTimeUpdate(callback) {
-        _removeFunctionCallback("onTimeUpdate", callback);
+        _map.get(this)["_removeFunctionCallback"]("onTimeUpdate", callback);
     }
 
 }
