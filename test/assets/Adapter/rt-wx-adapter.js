@@ -210,7 +210,7 @@ var InnerAudioContext = function () {
                     }
 
                     _map.get(this)['_beginUpdateProgress']();
-                } else if (_map.get(this)['_audioId'] !== undefined && this.loop === false && audioEngine.getState(_map.get(this)['_audioId']) !== _map.get(this)['_PLAYING']) {
+                } else if (_map.get(this)['_audioId'] !== undefined && audioEngine.getState(_map.get(this)['_audioId']) !== _map.get(this)['_PLAYING']) {
                     _map.get(this)['_audioId'] = undefined;
                     _map.get(this)['_audioId'] = audioEngine.play(_map.get(this)['_src'], this.loop, _map.get(this)['_inVolume']);
                     if (typeof _map.get(this)['startTime'] === "number" && _map.get(this)['startTime'] > 0) {
