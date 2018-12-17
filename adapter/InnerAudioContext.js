@@ -341,7 +341,7 @@ class InnerAudioContext {
     }
 
     destroy() {
-        audioEngine.end();
+        this.stop();
         _map.get(this)["_cbManager"].cbFunctionArrayMap = {};
     }
 
