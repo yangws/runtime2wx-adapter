@@ -24,6 +24,7 @@ class InnerAudioContext {
             _isSeeked: false,
             _PLAYING: 1,
             _PAUSE: 2,
+            _preloaded: false,
             _shouldUpdate: false,
             _updateProgress: function () {
                 setTimeout(() => {
@@ -81,6 +82,7 @@ class InnerAudioContext {
             }
         }
         // preload
+        _map.get(_this)["_preloaded"] = false;
         audioEngine.preload(value, function (loaded, errObj) {
             if (loaded === false) {
                 var errCb = _map.get(_this)['_ErrorCb'];
@@ -97,6 +99,14 @@ class InnerAudioContext {
                 var cbArray = _map.get(_this)["_cbManager"].getFunctionCallbackArray("onCanplay");
                 if (cbArray !== undefined) {
                     _map.get(_this)["_cbManager"].onFunctionCallback(cbArray);
+                }
+
+                _map.get(_this)["_preloaded"] = true;
+                if (_map.get(_this)['_audioId'] !== undefined && audioEngine.getState(_map.get(_this)['_audioId']) === _map.get(_this)['_PLAYING']) {
+                    var cbArray = _map.get(_this)["_cbManager"].getFunctionCallbackArray("onPlay");
+                    if (cbArray !== undefined) {
+                        _map.get(_this)["_cbManager"].onFunctionCallback(cbArray);
+                    }
                 }
             }
         });
@@ -244,11 +254,6 @@ class InnerAudioContext {
                 }
                 _map.get(this)['_isStop'] = false;
 
-                var cbArray2 = _map.get(this)["_cbManager"].getFunctionCallbackArray("onPlay");
-                if (cbArray2 !== undefined) {
-                    _map.get(this)["_cbManager"].onFunctionCallback(cbArray2);
-                }
-
                 if (cbArrayError !== undefined && audioEngine.getState(_map.get(this)['_audioId']) === -1) {
                     var res = { errMsg: "Network error", errCode: 10002 };
                     _map.get(this)["_cbManager"].onFunctionCallback(cbArrayError, res);
@@ -257,14 +262,23 @@ class InnerAudioContext {
                 _map.get(this)['_beginUpdateProgress']();
 
             } else if (_map.get(this)['_audioId'] !== undefined && audioEngine.getState(_map.get(this)['_audioId']) !== _map.get(this)['_PLAYING']) {
-                _map.get(this)['_audioId'] = undefined;
-                _map.get(this)['_audioId'] = audioEngine.play(_map.get(this)['_src'], this.loop, _map.get(this)['_inVolume']);
+                this.src = _map.get(this)['_src'];
+                if (_map.get(this)['_inAutoplay'] !== true) {
+                    _map.get(this)['_audioId'] = audioEngine.play(_map.get(this)['_src'], this.loop, _map.get(this)['_inVolume']);
+                }
                 if (typeof _map.get(this)['startTime'] === "number" && _map.get(this)['startTime'] > 0) {
                     audioEngine.setCurrentTime(_map.get(this)['_audioId'], _map.get(this)['startTime']);
                 }
                 _map.get(this)['_beginUpdateProgress']();
             } else {
                 return;
+            }
+        }
+
+        if (_map.get(this)["_preloaded"] === true && audioEngine.getState(_map.get(this)['_audioId']) === _map.get(this)['_PLAYING']) {
+            var cbArrayPlay = _map.get(this)["_cbManager"].getFunctionCallbackArray("onPlay");
+            if (cbArrayPlay !== undefined) {
+                _map.get(this)["_cbManager"].onFunctionCallback(cbArrayPlay);
             }
         }
 
