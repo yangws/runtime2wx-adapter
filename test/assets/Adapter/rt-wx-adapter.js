@@ -329,7 +329,6 @@ var InnerAudioContext = function () {
         value: function onPlay(callback) {
             if (_map.get(this)['_audioId'] !== undefined && audioEngine.getState(_map.get(this)['_audioId']) === _map.get(this)['_PLAYING']) {
                 callback();
-                return;
             }
             _map.get(this)["_cbManager"].pushFunctionCallback("onPlay", callback);
         }
@@ -343,7 +342,6 @@ var InnerAudioContext = function () {
         value: function onPause(callback) {
             if (_map.get(this)['_audioId'] !== undefined && audioEngine.getState(_map.get(this)['_audioId']) === _map.get(this)['_PAUSE']) {
                 callback();
-                return;
             }
             _map.get(this)["_cbManager"].pushFunctionCallback("onPause", callback);
         }
@@ -411,7 +409,6 @@ var InnerAudioContext = function () {
             if (_map.get(this)['_audioId'] !== undefined && _map.get(this)['_isSeeking']) {
                 _map.get(this)['_isSeeking'] = false;
                 callback();
-                return;
             }
             _map.get(this)["_cbManager"].pushFunctionCallback("onSeeking", callback);
         }
@@ -426,7 +423,6 @@ var InnerAudioContext = function () {
             if (_map.get(this)['_audioId'] !== undefined && _map.get(this)['_isSeeked']) {
                 _map.get(this)['_isSeeked'] = false;
                 callback();
-                return;
             }
             _map.get(this)["_cbManager"].pushFunctionCallback("onSeeked", callback);
         }
