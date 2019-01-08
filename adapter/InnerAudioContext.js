@@ -137,10 +137,7 @@ class InnerAudioContext {
     }
 
     get loop() {
-        var ret = false;
-        if (_map.get(this)['_audioId'] !== undefined) {
-            ret = audioEngine.isLoop(_map.get(this)['_audioId']);
-        }
+        var ret = _map.get(this)['_inLoop'];
         return ret;
     }
 

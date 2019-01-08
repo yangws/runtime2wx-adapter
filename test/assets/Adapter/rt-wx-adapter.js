@@ -528,10 +528,7 @@ var InnerAudioContext = function () {
     }, {
         key: 'loop',
         get: function get() {
-            var ret = false;
-            if (_map.get(this)['_audioId'] !== undefined) {
-                ret = audioEngine.isLoop(_map.get(this)['_audioId']);
-            }
+            var ret = _map.get(this)['_inLoop'];
             return ret;
         },
         set: function set(value) {
