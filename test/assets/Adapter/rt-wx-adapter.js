@@ -487,6 +487,10 @@ var InnerAudioContext = function () {
                         _map.get(_this)["_cbManager"].onFunctionCallback(cbArray);
                     }
 
+                    if (_this.autoplay === true && audioEngine.getState(_map.get(_this)['_audioId']) !== _map.get(_this)['_PLAYING']) {
+                        _this.play();
+                    }
+
                     _map.get(_this)["_preloaded"] = true;
                     if (_map.get(_this)['_audioId'] !== undefined && audioEngine.getState(_map.get(_this)['_audioId']) === _map.get(_this)['_PLAYING']) {
                         var cbArray = _map.get(_this)["_cbManager"].getFunctionCallbackArray("onPlay");
