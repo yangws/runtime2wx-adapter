@@ -304,6 +304,9 @@ var InnerAudioContext = function () {
         value: function destroy() {
             this.stop();
             _map.get(this)["_cbManager"].cbFunctionArrayMap = {};
+            _map.get(this)["_WaitingCb"] = null;
+            _map.get(this)["_endCb"] = null;
+            _map.get(this)["_errorCb"] = null;
         }
     }, {
         key: 'onEnded',
