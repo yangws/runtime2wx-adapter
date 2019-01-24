@@ -175,8 +175,8 @@ module.exports = cc.Class({
     },
 
     onClickButtonAutoplay() {
-        innerAudioContext.src = this.audioClip.nativeUrl;
         innerAudioContext.autoplay = true;
+        innerAudioContext.src = this.audioClip.nativeUrl;
         this.audioItem.setEvent("自动播放音乐");
     },
 
@@ -389,8 +389,12 @@ module.exports = cc.Class({
             this.timeUpdateCb = function () {
                 var currentTime = innerAudioContext.currentTime;
                 var duration = innerAudioContext.duration;
-                this.timeSlider.progress = currentTime / duration;
-                this.audioItem.setEvent("当前进度为：" + Math.floor(currentTime / duration * 100) / 100);
+                var progres = 0;
+                if (duration != 0) {
+                    progres = currentTime / duration;
+                }
+                this.timeSlider.progress = progres;
+                this.audioItem.setEvent("当前进度为：" + Math.floor(progres * 100) / 100);
             }.bind(this);
         }
         if (this.listenTimeUpdate === true) {
