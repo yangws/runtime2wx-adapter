@@ -472,7 +472,7 @@ var InnerAudioContext = function () {
             };
             // preload
             _map.get(_this)["_preloaded"] = false;
-            audioEngine.preload(value, function (loaded, errObj) {
+            audioEngine.preload(value, function (loaded, duration, errObj) {
                 if (loaded === false) {
                     var errCb = _map.get(_this)['_ErrorCb'];
                     var retObj = {
